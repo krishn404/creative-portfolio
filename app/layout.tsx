@@ -8,24 +8,11 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Portfolio | Graphic Designer",
-  description: "A minimal, animated portfolio showcasing visual poster artworks with elegant interactions",
+  title: "Krishna Kant | Portfolio",
+  description:
+    "A minimal, animated portfolio by Krishna Kant showcasing visual design, poster art, and creative projects.",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/favicon.ico",
   },
 }
 

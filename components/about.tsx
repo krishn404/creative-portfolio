@@ -51,10 +51,20 @@ export default function About() {
 
           {/* Right column - Description */}
           <motion.div variants={itemVariants} className="space-y-6">
-            <p className="text-lg font-light leading-relaxed text-black/70">
-              I am the Creative Head at Blackbombay House, a music production company where I manage and create visual
-              work across different areas like social media, branding, video editing, and storytelling.
-            </p>
+          <p className="text-lg font-light leading-relaxed text-black/70">
+                I am the Creative Head at{" "}
+                <a
+                  href="https://instagram.com/theblackbombayhouse"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-black font-medium underline hover:text-black/90"
+                >
+                  The Blackbombay House
+                </a>
+                , a music production company where I manage and create visual work across different areas like social media, branding,
+                video editing, and storytelling.
+              </p>
+
             <p className="text-lg font-light leading-relaxed text-black/70">
               My work includes graphic design, writing copy and scripts, basic video editing, and leading creative
               campaigns that connect with people. I enjoy shaping ideas into visuals that tell clear and engaging

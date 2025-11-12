@@ -68,7 +68,7 @@ export default function Contact() {
           {/* CTA Button */}
           <motion.div variants={itemVariants}>
             <motion.a
-              href="mailto:krishnakantmaharshi@gmail.com"
+              href="mailto:mailto:maharshikrishnakant@gmail.com"
               className="inline-block px-8 py-3 border border-black rounded-full text-sm font-light tracking-wide text-black hover:bg-black hover:text-white transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

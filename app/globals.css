@@ -129,6 +129,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Hide page blur on admin */
+body.hide-admin-blur .gradual-blur {
+  display: none !important;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

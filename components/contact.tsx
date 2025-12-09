@@ -1,13 +1,54 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
+import type { SiteContent } from "@/lib/content"
+import { getBrowserSupabase } from "@/lib/supabase/client"
+
+const defaultCta = "Interested in collaborating or commissioning a piece? I'd love to hear about your project."
+const defaultEmail = "psyxdes@gmail.com"
+const defaultSocials = [
+  { label: "Instagram", href: "https://instagram.com/kantcancook" },
+  { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
+  { label: "LinkedIn", href: "https://linkedin.com/in/krishn404" },
+  { label: "Email", href: "mailto:psyxdes@gmail.com" },
+]
 
 export default function Contact() {
+  const [cta, setCta] = useState(defaultCta)
+  const [email, setEmail] = useState(defaultEmail)
+  const [socialLinks, setSocialLinks] = useState<{ label: string; href: string }[]>(defaultSocials)
+
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.3,
   })
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/content", { cache: "no-store" })
+        if (!res.ok) throw new Error("Failed to load contact")
+        const data = (await res.json()) as SiteContent
+        setCta(data.contact?.cta ?? defaultCta)
+        setEmail(data.contact?.email ?? defaultEmail)
+        setSocialLinks(Array.isArray(data.contact?.socials) ? data.contact.socials : defaultSocials)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    const supabase = getBrowserSupabase()
+    const channel = supabase
+      .channel("public-contact")
+      .on("postgres_changes", { event: "*", schema: "public", table: "content" }, load)
+      .subscribe()
+
+    load()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -32,13 +73,6 @@ export default function Contact() {
     },
   }
 
-  const socialLinks = [
-    { label: "Instagram", href: "https://instagram.com/kantcancook" },
-    { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
-    { label: "LinkedIn", href: "https://linkedin.com/in/krishn404" },
-    { label: "Email", href: "mailto:maharshikrishnakant@gmail.com" },
-  ]
-
   return (
     <section
       ref={ref}
@@ -59,16 +93,13 @@ export default function Contact() {
             <h2 className="text-4xl md:text-5xl font-light tracking-tight text-black mb-4">
               Let's create together
             </h2>
-            <p className="text-lg font-light text-black/60 leading-relaxed">
-              Interested in collaborating or commissioning a piece? I'd love to
-              hear about your project.
-            </p>
+            <p className="text-lg font-light text-black/60 leading-relaxed">{cta}</p>
           </motion.div>
 
           {/* CTA Button */}
           <motion.div variants={itemVariants}>
             <motion.a
-              href="mailto:mailto:maharshikrishnakant@gmail.com"
+              href={`mailto:${email}`}
               className="inline-block px-8 py-3 border border-black rounded-full text-sm font-light tracking-wide text-black hover:bg-black hover:text-white transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

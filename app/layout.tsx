@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import GradualBlur from "@/components/GradualBlur"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -23,8 +24,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className="relative min-h-screen font-sans antialiased">
         {children}
+        <GradualBlur
+          target="page"
+          position="bottom"
+          height="6rem"
+          strength={2}
+          divCount={5}
+          curve="bezier"
+          exponential
+          opacity={1}
+          zIndex={50}
+        />
         <Analytics />
       </body>
     </html>

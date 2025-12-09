@@ -1,21 +1,42 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, Variants } from "framer-motion"
 import { useInView } from "react-intersection-observer"
-import LightRays from './LightRays';
+import Image from "next/image"
+import localFont from "next/font/local"
+import { Share_Tech_Mono } from "next/font/google"
+
+const retroFont = localFont({
+  src: "../public/font.ttf",
+  display: "swap",
+})
+
+const shareTechMono = Share_Tech_Mono({
+  subsets: ["latin"],
+  weight: "400",
+})
 
 export default function HeroSection() {
   const [stackComplete, setStackComplete] = useState(false)
   const [greeting, setGreeting] = useState("")
-  const [currentProfile, setCurrentProfile] = useState(0)
 
-  const profiles = [
-    "design visual narratives",
-    "craft compelling copy",
-    "edit dynamic videos",
-    "direct creative campaigns"
-  ]
+  const popFast = (delay = 0): Variants => ({
+    hidden: { opacity: 0, scale: 0.9, rotate: -2, y: 12 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      rotate: 0,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 520,
+        damping: 28,
+        mass: 0.7,
+        delay,
+      },
+    },
+  })
 
   // dynamic greeting
   useEffect(() => {
@@ -27,182 +48,74 @@ export default function HeroSection() {
     else setGreeting("Good evening")
   }, [])
 
-  // rotating profiles
+  // fast-cut pop-in on load
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentProfile((prev) => (prev + 1) % profiles.length)
-    }, 3000) // Change every 3 seconds
+    const id = setTimeout(() => setStackComplete(true), 90)
+    return () => clearTimeout(id)
+  }, [])
 
-    return () => clearInterval(interval)
-  }, [profiles.length])
 
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.3,
   })
 
-  // posters stack temporarily disabled
-  /*
-  const posters = [
-    { id: 1, color: "bg-blue-100", title: "Poster 01" },
-    { id: 2, color: "bg-emerald-100", title: "Poster 02" },
-    { id: 3, color: "bg-amber-100", title: "Poster 03" },
-    { id: 4, color: "bg-rose-100", title: "Poster 04" },
-    { id: 5, color: "bg-violet-100", title: "Poster 05" },
-  ]
-  */
-
-  useEffect(() => {
-    // immediately mark as complete since posters are disabled
-    setStackComplete(true)
-  }, [])
-
-  const heroContentVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.7,
-        ease: "easeOut",
-        staggerChildren: 0.15,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.7, ease: [0.23, 1, 0.82, 1] },
-    },
-  }
-
-  // const icons = [
-  //   { label: "About", icon: "○" },
-  //   { label: "Posters", icon: "◻" },
-  //   { label: "Shop", icon: "◈" },
-  //   { label: "Contact", icon: "↗" },
-  // ]
 
   return (
     
-    <section className="relative min-h-screen flex items-center justify-center bg-white overflow-hidden">
-      {/* LightRays Background */}
-      <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}>
-        <LightRays
-          raysOrigin="top-center"
-          raysColor="#00ffff"
-          raysSpeed={1.5}
-          lightSpread={0.8}
-          rayLength={1.2}
-          followMouse={true}
-          mouseInfluence={0.1}
-          noiseAmount={0.1}
-          distortion={0.05}
-        />
-      </div>
-
-      {/* subtle grid background */}
-      <div className="absolute inset-0 opacity-5 z-[1]">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "linear-gradient(0deg, transparent 24%, rgba(0,0,0,.05) 25%, rgba(0,0,0,.05) 26%, transparent 27%, transparent 74%, rgba(0,0,0,.05) 75%, rgba(0,0,0,.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0,0,0,.05) 25%, rgba(0,0,0,.05) 26%, transparent 27%, transparent 74%, rgba(0,0,0,.05) 75%, rgba(0,0,0,.05) 76%, transparent 77%, transparent)",
-            backgroundSize: "50px 50px",
-          }}
-        />
-      </div>
-
-      {/* temporarily disabled poster stack */}
-      {/*
+    <section className="relative min-h-screen flex items-center justify-center bg-white overflow-hidden select-none">
       <motion.div
-        className="relative w-64 h-80"
-        animate={stackComplete ? "fadeOut" : "visible"}
-        variants={stackContainerVariants}
-        initial="visible"
+        className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
+        variants={popFast(0.05)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
       >
-        {posters.map((poster, index) => (
-          <motion.div
-            key={poster.id}
-            custom={index}
-            initial="hidden"
-            animate="slideUp"
-            variants={posterVariants}
-            className={`absolute inset-0 ${poster.color} rounded-md shadow-md border border-black/5 flex items-center justify-center`}
-          >
-            <div className="text-3xl font-light tracking-tight text-black/30">
-              {poster.title}
-            </div>
-          </motion.div>
-        ))}
+        <Image
+          src="/desktop.png"
+          alt="Retro desktop illustration"
+          priority
+          width={1400}
+          height={1100}
+          className="w-[min(60vw,680px)] mt-[10px] h-auto drop-shadow-2xl"
+        />
       </motion.div>
-      */}
 
-      {/* Hero text + icons */}
+      <motion.div
+        className="absolute left-6 md:left-12 mt-[150px] -translate-y-1/2 z-20 text-left"
+        variants={popFast(0.08)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
+      >
+        <div
+          className={`${retroFont.className} text-black  tracking-widest leading-tight space-y-2 drop-shadow-[2px_2px_0_rgba(0,0,0,0.12)] rotate-1 md:rotate-2`}
+        >
+          <p className="text-5xl md:text-7xl">Here's My</p>
+          <p className="text-4xl md:text-5xl">Digital Creative</p>
+          <p className="text-4xl md:text-8xl"> Portfolio</p>
+        </div>
+      </motion.div>
+      
       <motion.div
         ref={ref}
         initial="hidden"
         animate={stackComplete && inView ? "visible" : "hidden"}
-        variants={heroContentVariants}
-        className="max-w-2xl text-center absolute z-10"
+        className="max-w-2xl text-center absolute z-10 top-12 left-1/2 -translate-x-1/2"
       >
-        <motion.div variants={itemVariants} className="mb-6">
+        <motion.div  className="mb-6">
           <p className="text-sm font-light tracking-widest text-black/50 uppercase">
             {greeting}
           </p>
         </motion.div>
-
-        <motion.h1 variants={itemVariants} className="mb-12">
-          <span className="text-5xl md:text-6xl font-light leading-tight tracking-tight text-balance text-black">
-          Hello, I'm Krishna Kant
-          </span>
-          <br />
-          <div className="text-2xl md:text-3xl font-light text-black/60 mt-4 flex items-center justify-center">
-            <div className="flex items-center">
-              <span className="mr-2">I</span>
-              <div className="relative h-[36px] md:h-[44px] w-[280px] md:w-[340px] flex items-center">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={currentProfile}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
-                    className="absolute left-0 whitespace-nowrap"
-                  >
-                    {profiles[currentProfile]}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-        </motion.h1>
-
-        {/* <motion.div
-          variants={itemVariants}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-12 border-t border-black/10"
-        >
-          {icons.map((item) => (
-            <div key={item.label} className="flex flex-col items-center gap-3">
-              <div className="text-2xl text-black/30">{item.icon}</div>
-              <p className="text-xs font-light tracking-widest uppercase text-black/50">
-                {item.label}
-              </p>
-            </div>
-          ))}
-        </motion.div> */}
+        
       </motion.div>
       <motion.div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-black/40"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-black/40 z-20"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
       >
         <p className="text-xs uppercase tracking-widest mb-3">Scroll</p>
-        <div className="w-[1px] h-12 bg-black/20 relative overflow-hidden">
+        <div className="w-px h-12 bg-black/20 relative overflow-hidden">
           <motion.div
             className="absolute top-0 left-0 w-full h-full bg-black/50"
             animate={{ y: ["-100%", "100%"] }}
@@ -213,6 +126,26 @@ export default function HeroSection() {
             }}
           />
         </div>
+      </motion.div>
+      <motion.div
+        className={`${shareTechMono.className} absolute right-6 md:right-12 top-1/2 -translate-y-1/2 text-right text-black/80 space-y-3 z-20 font-semibold`}
+        variants={popFast(0.11)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
+      >
+        <p className="text-base md:text-2xl font-bold tracking-widest">MUSIC COVER</p>
+        <p className="text-base md:text-2xl font-bold tracking-widest">VISUAL ARTIST</p>
+        <p className="text-base md:text-2xl font-bold tracking-widest">POMOTIONAL POSTERS</p>
+        <p className="text-base md:text-2xl font-bold tracking-widest">OPEN FOR COMMISSIONS</p>
+      </motion.div>
+      <motion.div
+        className="absolute bottom-25 left-11 text-xs md:text-sm text-black/20 z-20"
+        variants={popFast(0.16)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
+      >
+        This site is developed by me 
+        <br/>(Yes, I'm a developer too)
       </motion.div>
     </section>
   )

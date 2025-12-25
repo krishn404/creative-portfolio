@@ -60,7 +60,7 @@ export default function HeroSection() {
   })
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden select-none transition-colors duration-300">
+    <section className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden select-none transition-colors duration-300 px-4 sm:px-6 lg:px-8">
       <motion.div
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-0"
         variants={popFast(0.05)}
@@ -73,12 +73,13 @@ export default function HeroSection() {
           priority
           width={1400}
           height={1100}
-          className="w-[min(60vw,680px)] mt-[10px] h-auto drop-shadow-2xl"
+          className="w-[min(85vw,680px)] sm:w-[min(70vw,680px)] md:w-[min(60vw,680px)] mt-[10px] h-auto drop-shadow-2xl"
         />
       </motion.div>
 
+      {/* Left text - Hidden on very small screens, shown on tablet+ */}
       <motion.div
-        className="absolute left-4 md:left-6 lg:left-12 mt-[80px] md:mt-[150px] -translate-y-1/2 z-20 text-left"
+        className="hidden sm:block absolute left-4 md:left-6 lg:left-12 mt-[60px] sm:mt-[80px] md:mt-[150px] -translate-y-1/2 z-20 text-left"
         variants={popFast(0.08)}
         initial="hidden"
         animate={stackComplete ? "visible" : "hidden"}
@@ -86,9 +87,25 @@ export default function HeroSection() {
         <div
           className={`${retroFont.className} text-foreground tracking-widest leading-tight space-y-1 md:space-y-2 drop-shadow-[2px_2px_0_rgba(0,0,0,0.12)] rotate-1 md:rotate-2`}
         >
-          <p className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl">Here's My</p>
-          <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl">Digital Creative</p>
-          <p className="text-3xl sm:text-4xl md:text-5xl lg:text-8xl"> Portfolio</p>
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl">Here's My</p>
+          <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl">Digital Creative</p>
+          <p className="text-2xl sm:text-3xl md:text-5xl lg:text-8xl"> Portfolio</p>
+        </div>
+      </motion.div>
+
+      {/* Mobile: Center text overlay */}
+      <motion.div
+        className="sm:hidden absolute top-20 left-1/2 -translate-x-1/2 z-20 text-center"
+        variants={popFast(0.08)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
+      >
+        <div
+          className={`${retroFont.className} text-foreground tracking-widest leading-tight space-y-1 drop-shadow-[2px_2px_0_rgba(0,0,0,0.12)]`}
+        >
+          <p className="text-2xl">Here's My</p>
+          <p className="text-xl">Digital Creative</p>
+          <p className="text-2xl"> Portfolio</p>
         </div>
       </motion.div>
 
@@ -96,20 +113,20 @@ export default function HeroSection() {
         ref={ref}
         initial="hidden"
         animate={stackComplete && inView ? "visible" : "hidden"}
-        className="max-w-2xl text-center absolute z-10 top-8 md:top-12 left-1/2 -translate-x-1/2 px-4"
+        className="max-w-2xl text-center absolute z-10 top-4 sm:top-8 md:top-12 left-1/2 -translate-x-1/2 px-4"
       >
-        <motion.div className="mb-4 md:mb-6">
-          <p className="text-xs md:text-sm font-light tracking-widest text-muted-foreground uppercase">{greeting}</p>
+        <motion.div className="mb-2 sm:mb-4 md:mb-6">
+          <p className="text-[10px] sm:text-xs md:text-sm font-light tracking-widest text-muted-foreground uppercase">{greeting}</p>
         </motion.div>
       </motion.div>
       <motion.div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-muted-foreground z-20"
+        className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-muted-foreground z-20"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 0.8, ease: "easeOut" }}
       >
-        <p className="text-xs uppercase tracking-widest mb-3">Scroll</p>
-        <div className="w-px h-12 bg-border relative overflow-hidden">
+        <p className="text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3">Scroll</p>
+        <div className="w-px h-8 sm:h-12 bg-border relative overflow-hidden">
           <motion.div
             className="absolute top-0 left-0 w-full h-full bg-muted-foreground"
             animate={{ y: ["-100%", "100%"] }}
@@ -121,19 +138,32 @@ export default function HeroSection() {
           />
         </div>
       </motion.div>
+      {/* Right side text - Hidden on mobile, shown on tablet+ */}
       <motion.div
-        className={`${shareTechMono.className} absolute right-4 md:right-6 lg:right-12 top-1/2 -translate-y-1/2 text-right text-foreground space-y-2 md:space-y-3 z-20 font-semibold`}
+        className={`hidden md:block ${shareTechMono.className} absolute right-4 md:right-6 lg:right-12 top-1/2 -translate-y-1/2 text-right text-foreground space-y-2 md:space-y-3 z-20 font-semibold`}
         variants={popFast(0.11)}
         initial="hidden"
         animate={stackComplete ? "visible" : "hidden"}
       >
-        <p className="text-xs sm:text-sm md:text-base lg:text-2xl font-bold tracking-widest">MUSIC COVER</p>
-        <p className="text-xs sm:text-sm md:text-base lg:text-2xl font-bold tracking-widest">VISUAL ARTIST</p>
-        <p className="text-xs sm:text-sm md:text-base lg:text-2xl font-bold tracking-widest">PROMOTIONAL POSTERS</p>
-        <p className="text-xs sm:text-sm md:text-base lg:text-2xl font-bold tracking-widest">OPEN FOR COMMISSIONS</p>
+        <p className="text-sm md:text-base lg:text-2xl font-bold tracking-widest">MUSIC COVER</p>
+        <p className="text-sm md:text-base lg:text-2xl font-bold tracking-widest">VISUAL ARTIST</p>
+        <p className="text-sm md:text-base lg:text-2xl font-bold tracking-widest">PROMOTIONAL POSTERS</p>
+        <p className="text-sm md:text-base lg:text-2xl font-bold tracking-widest">OPEN FOR COMMISSIONS</p>
+      </motion.div>
+      {/* Mobile: Services below image */}
+      <motion.div
+        className={`md:hidden ${shareTechMono.className} absolute bottom-24 left-1/2 -translate-x-1/2 text-center text-foreground space-y-1.5 z-20 font-semibold`}
+        variants={popFast(0.11)}
+        initial="hidden"
+        animate={stackComplete ? "visible" : "hidden"}
+      >
+        <p className="text-[10px] font-bold tracking-widest">MUSIC COVER</p>
+        <p className="text-[10px] font-bold tracking-widest">VISUAL ARTIST</p>
+        <p className="text-[10px] font-bold tracking-widest">PROMOTIONAL POSTERS</p>
+        <p className="text-[10px] font-bold tracking-widest">OPEN FOR COMMISSIONS</p>
       </motion.div>
       <motion.div
-        className="hidden md:block absolute bottom-25 left-11 text-xs md:text-sm text-muted-foreground z-20"
+        className="hidden sm:block absolute bottom-20 sm:bottom-25 left-4 sm:left-8 md:left-11 text-[10px] sm:text-xs md:text-sm text-muted-foreground z-20"
         variants={popFast(0.16)}
         initial="hidden"
         animate={stackComplete ? "visible" : "hidden"}

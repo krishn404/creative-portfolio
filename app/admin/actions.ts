@@ -73,9 +73,15 @@ export async function saveContentAction(payload: SiteContent) {
     throw new Error(parsed.error.issues.map((i) => i.message).join(", "))
   }
 
-  await convex.mutation(api.content.upsert, parsed.data)
-
-  return { ok: true }
+  try {
+    await convex.mutation(api.content.upsert, parsed.data)
+    return { ok: true }
+  } catch (error) {
+    console.error("Convex mutation error in saveContentAction:", error)
+    throw new Error(
+      `Failed to save content: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
 }
 
 export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
@@ -85,51 +91,71 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
     throw new Error(parsed.error.issues.map((i) => i.message).join(", "))
   }
 
-  const result = await convex.mutation(api.works.upsert, {
-    id: parsed.data.id,
-    title: parsed.data.title,
-    img: parsed.data.img,
-    year: parsed.data.year,
-    publicId: parsed.data.publicId,
-    category: parsed.data.category,
-    status: parsed.data.status || "draft",
-    media: parsed.data.media,
-  })
+  try {
+    const result = await convex.mutation(api.works.upsert, {
+      id: parsed.data.id,
+      title: parsed.data.title,
+      img: parsed.data.img,
+      year: parsed.data.year,
+      publicId: parsed.data.publicId,
+      category: parsed.data.category,
+      status: parsed.data.status || "draft",
+      media: parsed.data.media,
+    })
 
-  return {
-    id: result.id,
-    title: parsed.data.title,
-    img: parsed.data.img,
-    year: parsed.data.year,
-    public_id: parsed.data.publicId,
-    category: parsed.data.category,
-    status: parsed.data.status || "draft",
-    media: parsed.data.media,
+    return {
+      id: result.id,
+      title: parsed.data.title,
+      img: parsed.data.img,
+      year: parsed.data.year,
+      public_id: parsed.data.publicId,
+      category: parsed.data.category,
+      status: parsed.data.status || "draft",
+      media: parsed.data.media,
+    }
+  } catch (error) {
+    console.error("Convex mutation error in upsertWorkAction:", error)
+    throw new Error(
+      `Failed to save work: ${error instanceof Error ? error.message : String(error)}`
+    )
   }
 }
 
 export async function updateWorkStatusAction(workId: string, status: "draft" | "published" | "archived") {
   await assertAdminSession()
 
-  await convex.mutation(api.works.updateStatus, { id: workId, status })
-
-  return { ok: true }
+  try {
+    await convex.mutation(api.works.updateStatus, { id: workId, status })
+    return { ok: true }
+  } catch (error) {
+    console.error("Convex mutation error in updateWorkStatusAction:", error)
+    throw new Error(
+      `Failed to update work status: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
 }
 
 export async function deleteWorkAction(workId: string) {
   await assertAdminSession()
 
-  const result = await convex.mutation(api.works.deleteWork, { id: workId })
+  try {
+    const result = await convex.mutation(api.works.deleteWork, { id: workId })
 
-  if (result.publicId) {
-    try {
-      await cloudinary.uploader.destroy(result.publicId, { invalidate: true })
-    } catch (err) {
-      console.error("Failed to delete cloudinary asset", err)
+    if (result.publicId) {
+      try {
+        await cloudinary.uploader.destroy(result.publicId, { invalidate: true })
+      } catch (err) {
+        console.error("Failed to delete cloudinary asset", err)
+      }
     }
-  }
 
-  return { ok: true }
+    return { ok: true }
+  } catch (error) {
+    console.error("Convex mutation error in deleteWorkAction:", error)
+    throw new Error(
+      `Failed to delete work: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
 }
 
 export async function validatePasswordAction(password: string) {

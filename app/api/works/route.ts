@@ -13,8 +13,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ works })
   } catch (error) {
-    console.error("Failed to fetch works", error)
-    return NextResponse.json({ error: "Failed to load works" }, { status: 500 })
+    console.error("Failed to fetch works from Convex:", error)
+    // Return more detailed error in development
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? `Convex error: ${error instanceof Error ? error.message : String(error)}`
+      : "Failed to load works"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -39,8 +43,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, id: result.id })
   } catch (error) {
-    console.error("Failed to save work", error)
-    return NextResponse.json({ error: "Failed to save work" }, { status: 500 })
+    console.error("Failed to save work to Convex:", error)
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? `Convex error: ${error instanceof Error ? error.message : String(error)}`
+      : "Failed to save work"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 

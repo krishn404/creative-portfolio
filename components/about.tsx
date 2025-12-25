@@ -42,7 +42,7 @@ export default function About() {
       x: 0,
       transition: {
         duration: 0.8,
-        ease: [0.23, 1, 0.82, 1],
+        ease: [0.23, 1, 0.82, 1] as const,
       },
     },
   }
@@ -50,37 +50,37 @@ export default function About() {
   return (
     <section
       ref={ref}
-      className="min-h-screen py-12 md:py-20 px-4 bg-background flex items-center transition-colors duration-300"
+      className="min-h-screen py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-background flex items-center transition-colors duration-300"
     >
       <div className="max-w-4xl mx-auto w-full">
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12"
           variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
           {/* Left column - Title */}
           <motion.div variants={itemVariants}>
-            <p className="text-xs font-light tracking-widest uppercase text-muted-foreground mb-4">About</p>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light leading-tight tracking-tight text-foreground">
+            <p className="text-[10px] sm:text-xs font-light tracking-widest uppercase text-muted-foreground mb-3 sm:mb-4">About</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light leading-tight tracking-tight text-foreground">
               {headline}
             </h2>
           </motion.div>
 
           {/* Right column - Description */}
-          <motion.div variants={itemVariants} className="space-y-6">
+          <motion.div variants={itemVariants} className="space-y-4 sm:space-y-6">
             {paragraphs.map((paragraph: string, idx: number) => (
-              <p key={idx} className="text-base md:text-lg font-light leading-relaxed text-muted-foreground">
+              <p key={idx} className="text-sm sm:text-base md:text-lg font-light leading-relaxed text-muted-foreground">
                 {paragraph}
               </p>
             ))}
-            <div className="pt-4 space-y-3">
-              <p className="text-sm font-light text-muted-foreground">Open for collaboration and creative roles.</p>
-              <div className="flex flex-wrap gap-2 md:gap-3">
+            <div className="pt-2 sm:pt-4 space-y-2 sm:space-y-3">
+              <p className="text-xs sm:text-sm font-light text-muted-foreground">Open for collaboration and creative roles.</p>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 md:gap-3">
                 {tags.map((tag: string) => (
                   <span
                     key={tag}
-                    className="inline-block px-3 md:px-4 py-1.5 md:py-2 border border-border rounded-full text-xs font-light tracking-wide hover:border-foreground/50 transition-colors cursor-pointer"
+                    className="inline-block px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-border rounded-full text-[10px] sm:text-xs font-light tracking-wide hover:border-foreground/50 transition-colors cursor-pointer"
                   >
                     {tag}
                   </span>

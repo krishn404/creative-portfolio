@@ -9,8 +9,12 @@ export async function GET() {
     const data = await convex.query(api.content.get)
     return NextResponse.json(data)
   } catch (error) {
-    console.error("Failed to fetch content", error)
-    return NextResponse.json({ error: "Failed to load content" }, { status: 500 })
+    console.error("Failed to fetch content from Convex:", error)
+    // Return more detailed error in development
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? `Convex error: ${error instanceof Error ? error.message : String(error)}`
+      : "Failed to load content"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -30,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error("Failed to save content", error)
-    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
+    console.error("Failed to save content to Convex:", error)
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? `Convex error: ${error instanceof Error ? error.message : String(error)}`
+      : "Failed to save content"
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

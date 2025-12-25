@@ -110,12 +110,12 @@ export default function Gallery() {
             </h2>
           </motion.div>
 
-          <div className="flex flex-wrap gap-2 md:gap-3 mb-6">
+          <div className="flex flex-wrap gap-2 sm:gap-2.5 md:gap-3 mb-6">
             {["All", "Posters", "Thumbnails", "Graphic Clothing"].map((cat) => (
               <motion.button
                 key={cat}
                 onClick={() => setCategory(cat as any)}
-                className={`px-3 py-2 text-xs md:text-sm rounded-full border transition ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm rounded-full border transition ${
                   category === cat
                     ? "border-foreground bg-foreground text-background"
                     : "border-border text-foreground hover:border-foreground/40"
@@ -202,7 +202,7 @@ export default function Gallery() {
                 
                 {/* Modal content with sleek animation */}
                 <motion.div
-                  className="fixed top-1/2 left-1/2 z-50 w-full max-w-5xl max-h-[95vh] -translate-x-1/2 -translate-y-1/2 p-0 bg-background/95 backdrop-blur-lg border-0 rounded-lg shadow-2xl overflow-hidden"
+                  className="fixed top-1/2 left-1/2 z-50 w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-full max-w-5xl max-h-[95vh] -translate-x-1/2 -translate-y-1/2 p-0 bg-background/95 backdrop-blur-lg border-0 rounded-lg sm:rounded-xl shadow-2xl overflow-hidden mx-2 sm:mx-4"
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -217,19 +217,19 @@ export default function Gallery() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-4 right-4 z-10 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                      className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
                       onClick={handleCloseModal}
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Button>
 
-                    <div className="relative flex-1 flex items-center justify-center p-8">
+                    <div className="relative flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 min-h-0">
                       <AnimatePresence mode="wait">
                         <motion.img
                           key={carouselIndex}
                           src={selectedWork.media?.[carouselIndex]?.url || selectedWork.img}
                           alt={`${selectedWork.title} - ${carouselIndex + 1}`}
-                          className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                          className="max-w-full max-h-[60vh] sm:max-h-[65vh] md:max-h-[70vh] object-contain rounded-lg"
                           initial={{ opacity: 0, x: 50 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -50 }}
@@ -242,36 +242,36 @@ export default function Gallery() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
                             onClick={handlePrevious}
                           >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
                             onClick={handleNext}
                           >
-                            <ChevronRight className="w-6 h-6" />
+                            <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
                           </Button>
                         </>
                       )}
                     </div>
 
-                    <div className="p-6 border-t border-border/50">
-                      <div className="flex items-baseline justify-between mb-4">
-                        <h3 className="text-2xl font-light tracking-wide">{selectedWork.title}</h3>
-                        <p className="text-sm text-muted-foreground">{selectedWork.year}</p>
+                    <div className="p-4 sm:p-6 border-t border-border/50">
+                      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+                        <h3 className="text-lg sm:text-xl md:text-2xl font-light tracking-wide break-words">{selectedWork.title}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground shrink-0">{selectedWork.year}</p>
                       </div>
 
                       {selectedWork.media && selectedWork.media.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto pb-2">
+                        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
                           {selectedWork.media.map((asset, index) => (
                             <button
                               key={index}
                               onClick={() => setCarouselIndex(index)}
-                              className={`relative w-16 h-16 rounded-md overflow-hidden border-2 transition flex-shrink-0 ${
+                              className={`relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-md overflow-hidden border-2 transition flex-shrink-0 ${
                                 carouselIndex === index ? "border-foreground" : "border-border/50 hover:border-border"
                               }`}
                             >
@@ -286,7 +286,7 @@ export default function Gallery() {
                       )}
 
                       {selectedWork.media && selectedWork.media.length > 1 && (
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center">
                           {carouselIndex + 1} / {selectedWork.media.length}
                         </p>
                       )}

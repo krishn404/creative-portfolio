@@ -1,10 +1,10 @@
 "use client"
-
-import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
+import useSWR from "swr"
 import type { SiteContent } from "@/lib/content"
-import { getBrowserSupabase } from "@/lib/supabase/client"
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const defaultHeadline = "Building stories through design and creativity"
 const defaultParagraphs = [
@@ -14,39 +14,15 @@ const defaultParagraphs = [
 const defaultTags = ["Creative Direction", "Graphic Design", "Video Editing", "Copywriting", "Social Media Creatives"]
 
 export default function About() {
-  const [headline, setHeadline] = useState(defaultHeadline)
-  const [paragraphs, setParagraphs] = useState<string[]>(defaultParagraphs)
-  const [tags, setTags] = useState<string[]>(defaultTags)
+  const { data } = useSWR<SiteContent>("/api/content", fetcher)
+  const headline = data?.about?.headline ?? defaultHeadline
+  const paragraphs = data?.about?.paragraphs ?? defaultParagraphs
+  const tags = data?.about?.tags ?? defaultTags
 
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.3,
   })
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/content", { cache: "no-store" })
-        if (!res.ok) throw new Error("Failed to load about")
-        const data = (await res.json()) as SiteContent
-        setHeadline(data.about?.headline ?? defaultHeadline)
-        setParagraphs(Array.isArray(data.about?.paragraphs) ? data.about.paragraphs : defaultParagraphs)
-        setTags(Array.isArray(data.about?.tags) ? data.about.tags : defaultTags)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    const supabase = getBrowserSupabase()
-    const channel = supabase
-      .channel("public-about")
-      .on("postgres_changes", { event: "*", schema: "public", table: "content" }, load)
-      .subscribe()
-
-    load()
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -72,34 +48,39 @@ export default function About() {
   }
 
   return (
-    <section ref={ref} className="min-h-screen py-20 px-4 bg-white flex items-center">
+    <section
+      ref={ref}
+      className="min-h-screen py-12 md:py-20 px-4 bg-background flex items-center transition-colors duration-300"
+    >
       <div className="max-w-4xl mx-auto w-full">
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 gap-12"
+          className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12"
           variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
           {/* Left column - Title */}
           <motion.div variants={itemVariants}>
-            <p className="text-xs font-light tracking-widest uppercase text-black/50 mb-4">About</p>
-            <h2 className="text-4xl md:text-5xl font-light leading-tight tracking-tight text-black">{headline}</h2>
+            <p className="text-xs font-light tracking-widest uppercase text-muted-foreground mb-4">About</p>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light leading-tight tracking-tight text-foreground">
+              {headline}
+            </h2>
           </motion.div>
 
           {/* Right column - Description */}
           <motion.div variants={itemVariants} className="space-y-6">
-            {paragraphs.map((paragraph, idx) => (
-              <p key={idx} className="text-lg font-light leading-relaxed text-black/70">
+            {paragraphs.map((paragraph: string, idx: number) => (
+              <p key={idx} className="text-base md:text-lg font-light leading-relaxed text-muted-foreground">
                 {paragraph}
               </p>
             ))}
             <div className="pt-4 space-y-3">
-              <p className="text-sm font-light text-black/50">Open for collaboration and creative roles.</p>
-              <div className="flex flex-wrap gap-3">
-                {tags.map((tag) => (
+              <p className="text-sm font-light text-muted-foreground">Open for collaboration and creative roles.</p>
+              <div className="flex flex-wrap gap-2 md:gap-3">
+                {tags.map((tag: string) => (
                   <span
                     key={tag}
-                    className="inline-block px-4 py-2 border border-black/20 rounded-full text-xs font-light tracking-wide hover:border-black/50 transition-colors cursor-pointer"
+                    className="inline-block px-3 md:px-4 py-1.5 md:py-2 border border-border rounded-full text-xs font-light tracking-wide hover:border-foreground/50 transition-colors cursor-pointer"
                   >
                     {tag}
                   </span>

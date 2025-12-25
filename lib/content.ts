@@ -1,12 +1,19 @@
-import { getAdminSupabase } from "@/lib/supabase/admin"
-
 export type WorkItem = {
   id: string
   img: string
+  media?: MediaAsset[]
   title: string
   year?: string
   publicId?: string
   category?: "Posters" | "Thumbnails" | "Graphic Clothing"
+  status?: "draft" | "published" | "archived"
+}
+
+export type MediaAsset = {
+  url: string
+  publicId?: string
+  type: "image" | "video"
+  order: number
 }
 
 export type SiteContent = {
@@ -26,7 +33,7 @@ export type SiteContent = {
   }
 }
 
-const defaultContent: SiteContent = {
+export const getDefaultContent = (): SiteContent => ({
   about: {
     headline: "Building stories through design and creativity",
     paragraphs: [
@@ -34,13 +41,7 @@ const defaultContent: SiteContent = {
       "My work includes graphic design, writing copy and scripts, basic video editing, and leading creative campaigns that connect with people. I enjoy shaping ideas into visuals that tell clear and engaging stories.",
       "Open for freelance, collaboration, and creative roles in design, content, and media.",
     ],
-    tags: [
-      "Creative Direction",
-      "Graphic Design",
-      "Video Editing",
-      "Copywriting",
-      "Social Media Creatives",
-    ],
+    tags: ["Creative Direction", "Graphic Design", "Video Editing", "Copywriting", "Social Media Creatives"],
   },
   works: [],
   contact: {
@@ -56,67 +57,19 @@ const defaultContent: SiteContent = {
   footer: {
     note: "© 2025 Krishnakant Maharshi. All rights reserved.",
   },
-}
+})
 
 export async function readContent(): Promise<SiteContent> {
-  const supabase = getAdminSupabase()
+  try {
+    const { convex } = await import("@/lib/convex")
+    const { api } = await import("@/convex/_generated/api")
 
-  const { data: existing, error } = await supabase
-    .from("content")
-    .select("about, contact, footer")
-    .eq("id", "singleton")
-    .single()
+    const content = await convex.query(api.content.get)
+    const works = await convex.query(api.works.listAll)
 
-  if (error) {
-    console.error("Failed to read content, seeding defaults", error)
-    await supabase.from("content").upsert({
-      id: "singleton",
-      about: defaultContent.about,
-      contact: defaultContent.contact,
-      footer: defaultContent.footer,
-    })
-    return { ...defaultContent, works: await listWorks() }
-  }
-
-  return {
-    about: existing?.about ?? defaultContent.about,
-    contact: existing?.contact ?? defaultContent.contact,
-    footer: existing?.footer ?? defaultContent.footer,
-    works: await listWorks(),
+    return { ...content, works } as SiteContent
+  } catch (error) {
+    console.error("Failed to read content from Convex:", error)
+    return getDefaultContent()
   }
 }
-
-export async function writeContent(content: SiteContent) {
-  const supabase = getAdminSupabase()
-
-  await supabase.from("content").upsert({
-    id: "singleton",
-    about: content.about ?? defaultContent.about,
-    contact: content.contact ?? defaultContent.contact,
-    footer: content.footer ?? defaultContent.footer,
-    updated_at: new Date().toISOString(),
-  })
-}
-
-export async function listWorks(): Promise<WorkItem[]> {
-  const supabase = getAdminSupabase()
-  const { data, error } = await supabase
-    .from("works")
-    .select("id, title, img, year, public_id, category")
-    .order("created_at", { ascending: true })
-
-  if (error) {
-    console.error("Failed to load works", error)
-    return defaultContent.works
-  }
-
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    img: row.img,
-    year: row.year,
-    publicId: row.public_id ?? undefined,
-    category: row.category ?? "Posters",
-  }))
-}
-

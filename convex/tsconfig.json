@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "ES2020",
+    "lib": ["ES2021"],
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "allowJs": false,
+    "checkJs": false
+  },
+  "include": ["."]
+}

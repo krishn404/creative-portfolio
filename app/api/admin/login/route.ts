@@ -17,4 +17,3 @@ export async function POST(request: NextRequest) {
   setSessionCookie(response)
   return response
 }
-

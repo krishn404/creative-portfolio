@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
+import useSWR from "swr"
 import type { SiteContent } from "@/lib/content"
-import { getBrowserSupabase } from "@/lib/supabase/client"
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const defaultCta = "Interested in collaborating or commissioning a piece? I'd love to hear about your project."
 const defaultEmail = "psyxdes@gmail.com"
@@ -16,39 +17,15 @@ const defaultSocials = [
 ]
 
 export default function Contact() {
-  const [cta, setCta] = useState(defaultCta)
-  const [email, setEmail] = useState(defaultEmail)
-  const [socialLinks, setSocialLinks] = useState<{ label: string; href: string }[]>(defaultSocials)
+  const { data } = useSWR<SiteContent>("/api/content", fetcher)
+  const cta = data?.contact?.cta ?? defaultCta
+  const email = data?.contact?.email ?? defaultEmail
+  const socialLinks = data?.contact?.socials ?? defaultSocials
 
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.3,
   })
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/content", { cache: "no-store" })
-        if (!res.ok) throw new Error("Failed to load contact")
-        const data = (await res.json()) as SiteContent
-        setCta(data.contact?.cta ?? defaultCta)
-        setEmail(data.contact?.email ?? defaultEmail)
-        setSocialLinks(Array.isArray(data.contact?.socials) ? data.contact.socials : defaultSocials)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    const supabase = getBrowserSupabase()
-    const channel = supabase
-      .channel("public-contact")
-      .on("postgres_changes", { event: "*", schema: "public", table: "content" }, load)
-      .subscribe()
-
-    load()
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -76,31 +53,29 @@ export default function Contact() {
   return (
     <section
       ref={ref}
-      className="min-h-screen py-20 px-4 bg-white border-t border-black/5 flex items-center"
+      className="min-h-screen py-12 md:py-20 px-4 bg-background border-t border-border flex items-center transition-colors duration-300"
     >
       <div className="max-w-3xl mx-auto w-full text-center">
         <motion.div
-          className="space-y-12"
+          className="space-y-8 md:space-y-12"
           variants={containerVariants}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
         >
           {/* Heading */}
           <motion.div variants={itemVariants}>
-            <p className="text-xs font-light tracking-widest uppercase text-black/50 mb-4">
-              Get in Touch
-            </p>
-            <h2 className="text-4xl md:text-5xl font-light tracking-tight text-black mb-4">
+            <p className="text-xs font-light tracking-widest uppercase text-muted-foreground mb-4">Get in Touch</p>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground mb-4">
               Let's create together
             </h2>
-            <p className="text-lg font-light text-black/60 leading-relaxed">{cta}</p>
+            <p className="text-base md:text-lg font-light text-muted-foreground leading-relaxed px-4">{cta}</p>
           </motion.div>
 
           {/* CTA Button */}
           <motion.div variants={itemVariants}>
             <motion.a
               href={`mailto:${email}`}
-              className="inline-block px-8 py-3 border border-black rounded-full text-sm font-light tracking-wide text-black hover:bg-black hover:text-white transition-all duration-300"
+              className="inline-block px-6 md:px-8 py-2.5 md:py-3 border border-foreground rounded-full text-sm font-light tracking-wide text-foreground hover:bg-foreground hover:text-background transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -109,17 +84,14 @@ export default function Contact() {
           </motion.div>
 
           {/* Social links */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-wrap justify-center gap-8"
-          >
-            {socialLinks.map((link) => (
+          <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4 md:gap-8">
+            {socialLinks.map((link: { label: string; href: string }) => (
               <motion.a
                 key={link.label}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-light text-black/50 hover:text-black transition-colors"
+                className="text-sm font-light text-muted-foreground hover:text-foreground transition-colors"
                 whileHover={{ x: 4 }}
                 transition={{ duration: 0.2 }}
               >
@@ -131,7 +103,7 @@ export default function Contact() {
           {/* Footer */}
           <motion.div
             variants={itemVariants}
-            className="pt-12 border-t border-black/5 text-xs font-light text-black/40"
+            className="pt-8 md:pt-12 border-t border-border text-xs font-light text-muted-foreground"
           >
             <p>© 2025 Krishnakant Maharshi. All rights reserved.</p>
           </motion.div>

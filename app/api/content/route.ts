@@ -1,10 +1,17 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { isAuthenticated } from "@/lib/auth"
-import { readContent, writeContent, type SiteContent } from "@/lib/content"
+import { convex } from "@/lib/convex"
+import { api } from "@/convex/_generated/api"
+import type { SiteContent } from "@/lib/content"
 
 export async function GET() {
-  const content = await readContent()
-  return NextResponse.json(content)
+  try {
+    const data = await convex.query(api.content.get)
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error("Failed to fetch content", error)
+    return NextResponse.json({ error: "Failed to load content" }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -12,16 +19,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const incoming = (await request.json().catch(() => ({}))) as Partial<SiteContent>
-  const current = await readContent()
-  const merged: SiteContent = {
-    about: incoming.about ?? current.about,
-    contact: incoming.contact ?? current.contact,
-    works: current.works,
-    footer: incoming.footer ?? current.footer,
+  try {
+    const incoming = (await request.json().catch(() => ({}))) as Partial<SiteContent>
+
+    await convex.mutation(api.content.upsert, {
+      about: incoming.about!,
+      contact: incoming.contact!,
+      footer: incoming.footer,
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("Failed to save content", error)
+    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
   }
-
-  await writeContent(merged)
-  return NextResponse.json(merged)
 }
-

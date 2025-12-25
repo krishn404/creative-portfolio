@@ -1,9 +1,19 @@
-import { readContent, type SiteContent } from "@/lib/content"
+import { convex } from "@/lib/convex"
+import { api } from "@/convex/_generated/api"
+import { getDefaultContent, type SiteContent } from "@/lib/content"
 import AdminDashboard from "@/components/admin/dashboard"
-import { deleteWorkAction, saveContentAction, upsertWorkAction } from "./actions"
+import { deleteWorkAction, saveContentAction, updateWorkStatusAction, upsertWorkAction } from "./actions"
 
 export default async function AdminPage() {
-  const initialContent = (await readContent()) as SiteContent
+  let initialContent: SiteContent
+  try {
+    const data = await convex.query(api.content.get)
+    const works = await convex.query(api.works.listAll)
+    initialContent = { ...data, works } as SiteContent
+  } catch (error) {
+    console.error("Failed to fetch initial content:", error)
+    initialContent = getDefaultContent()
+  }
 
   return (
     <AdminDashboard
@@ -11,9 +21,9 @@ export default async function AdminPage() {
       actions={{
         saveContent: saveContentAction,
         upsertWork: upsertWorkAction,
+        updateWorkStatus: updateWorkStatusAction,
         deleteWork: deleteWorkAction,
       }}
     />
   )
 }
-

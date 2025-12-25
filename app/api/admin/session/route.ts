@@ -5,4 +5,3 @@ export async function GET(request: NextRequest) {
   const authenticated = isAuthenticated(request)
   return NextResponse.json({ authenticated }, { status: authenticated ? 200 : 401 })
 }
-

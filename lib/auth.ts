@@ -45,4 +45,3 @@ export function getAdminPasswordHint() {
   const pwd = adminPassword
   return `${pwd.slice(0, 2)}••••${pwd.slice(-2)}`
 }
-

@@ -388,7 +388,13 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.responseText)
           } else {
-            reject(new Error(xhr.responseText || "Upload failed"))
+            // Try to parse error message from response
+            try {
+              const errorData = JSON.parse(xhr.responseText)
+              reject(new Error(errorData?.error || `Upload failed with status ${xhr.status}`))
+            } catch {
+              reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`))
+            }
           }
         }
         xhr.onerror = () => reject(new Error("Network error during upload"))
@@ -399,11 +405,19 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       try {
         data = JSON.parse(responseText)
         if (!data || !data.url) {
-          throw new Error("Invalid response from upload API")
+          // Check if there's an error message in the response
+          const errorMsg = data?.error || "Invalid response from upload API"
+          throw new Error(errorMsg)
         }
       } catch (parseError) {
-        console.error("[krixnx] Upload response parse error:", parseError)
-        throw new Error("Invalid JSON response from server")
+        console.error("Upload response parse error:", parseError)
+        // Try to extract error message from response
+        try {
+          const errorData = JSON.parse(responseText)
+          throw new Error(errorData?.error || "Invalid JSON response from server")
+        } catch {
+          throw new Error("Invalid JSON response from server")
+        }
       }
 
       const existingMedia = work.media || []

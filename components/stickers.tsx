@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface StickerPosition {
   x: number // percentage
@@ -16,9 +17,9 @@ const STICKER_POSITIONS: StickerPosition[] = [
   { x: 28, y: 10, rotation: -8, scale: 0.8 },   // 1.png
   { x: 65, y: 15, rotation: 12, scale: 0.7 },  // 2.png
   { x: 72, y: 35, rotation: -5, scale: 0.9 },  // 3.png
-  { x: 88, y: 15, rotation: 15, scale: 0.75 }, // 4.png
+  { x: 88, y: 15, rotation: 15, scale: 0.75 },  // 4.png
   { x: 28, y: 60, rotation: -12, scale: 0.85 }, // 5.png
-  { x: 78, y: 65, rotation: 8, scale: 2.0 },   // 6.png
+  { x: 78, y: 65, rotation: 8, scale: 2.0 },    // 6.png
   { x: 15, y: 80, rotation: 10, scale: 1.1 }
 ]
 
@@ -32,6 +33,16 @@ function Sticker({ src, index, position }: StickerProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const stickerRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
+  
+  // Responsive scale: reduce by 30% on mobile to prevent overlap while maintaining visibility
+  const responsiveScale = isMobile ? position.scale * 0.7 : position.scale
+  
+  // Update scale when mobile state changes
+  useEffect(() => {
+    const currentScale = isMobile ? position.scale * 0.4 : position.scale
+    // The scale will be applied through the animate prop, which will update on re-render
+  }, [isMobile, position.scale])
   
   // Convert percentage to pixel values (relative to viewport, but will scroll with page)
   const getPixelPosition = useCallback(() => {
@@ -104,12 +115,12 @@ function Sticker({ src, index, position }: StickerProps) {
     return () => clearTimeout(timer)
   }, [rotation, position.rotation, index])
   
-  // Scale on hover - use motion value for transform
+  // Scale on hover - use motion value for transform (responsive)
   const hoverState = useMotionValue(0)
   const hoverScale = useTransform(
     hoverState,
     [0, 1],
-    [position.scale, position.scale * 1.05]
+    [responsiveScale, responsiveScale * 1.05]
   )
   
   // Update hover state when isHovered changes
@@ -180,7 +191,7 @@ function Sticker({ src, index, position }: StickerProps) {
       initial={{ opacity: 0, scale: 0.3 }}
       animate={{ 
         opacity: 1, 
-        scale: position.scale,
+        scale: responsiveScale,
         transition: { 
           duration: 0.8,
           delay: 0.4 + index * 0.15,
@@ -188,14 +199,14 @@ function Sticker({ src, index, position }: StickerProps) {
         }
       }}
       whileHover={{
-        scale: position.scale * 1.05,
+        scale: responsiveScale * 1.05,
         transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] }
       }}
       drag={false} // Disable default drag, using custom implementation
       dragElastic={0}
       dragMomentum={false}
     >
-      <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24">
+      <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
         <Image
           src={src}
           alt={`Sticker ${index + 1}`}

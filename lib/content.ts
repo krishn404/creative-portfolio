@@ -50,7 +50,6 @@ export const getDefaultContent = (): SiteContent => ({
     socials: [
       { label: "Instagram", href: "https://instagram.com/kantcancook" },
       { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
-      { label: "LinkedIn", href: "https://linkedin.com/in/krishn404" },
       { label: "Email", href: "mailto:psyxdes@gmail.com" },
     ],
   },

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { X } from "lucide-react"
 import type { WorkItem } from "@/lib/content"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -61,14 +61,10 @@ export default function Gallery() {
     }
   }, [selectedWork, handleCloseModal])
 
-  const handlePrevious = () => {
-    if (!selectedWork?.media) return
-    setCarouselIndex((prev) => (prev === 0 ? selectedWork.media!.length - 1 : prev - 1))
-  }
-
-  const handleNext = () => {
-    if (!selectedWork?.media) return
-    setCarouselIndex((prev) => (prev === selectedWork.media!.length - 1 ? 0 : prev + 1))
+  // Get the index of the selected work in the filtered list for numbering
+  const getWorkNumber = (work: WorkItem): number => {
+    const filtered = category === "All" ? works : works.filter((w: WorkItem) => w.category === category)
+    return filtered.findIndex((w) => w.id === work.id) + 1
   }
 
   const containerVariants = {
@@ -200,96 +196,115 @@ export default function Gallery() {
                   onClick={handleCloseModal}
                 />
                 
-                {/* Modal content with sleek animation */}
+                {/* Modal content - Reference UI layout */}
                 <motion.div
-                  className="fixed top-1/2 left-1/2 z-50 w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-full max-w-5xl max-h-[95vh] -translate-x-1/2 -translate-y-1/2 p-0 bg-background/95 backdrop-blur-lg border-0 rounded-lg sm:rounded-xl shadow-2xl overflow-hidden mx-2 sm:mx-4"
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  transition={{ 
-                    duration: 0.4, 
-                    ease: [0.23, 1, 0.32, 1],
-                    opacity: { duration: 0.3 }
-                  }}
+                  className="fixed inset-0 z-50 w-full h-full bg-background overflow-hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="relative w-full h-full flex flex-col">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
-                      onClick={handleCloseModal}
-                    >
-                      <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </Button>
+                  <div className="relative w-full h-full grid grid-cols-1 lg:grid-cols-2">
+                    {/* Left Column - Post Number, Description */}
+                    <div className="relative bg-background flex flex-col p-6 sm:p-8 md:p-12 lg:p-16">
+                      {/* Post Number - Top Left */}
+                      <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="mb-auto"
+                      >
+                        <p className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif text-foreground/20 leading-none">
+                          {getWorkNumber(selectedWork)}
+                        </p>
+                      </motion.div>
 
-                    <div className="relative flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 min-h-0">
-                      <AnimatePresence mode="wait">
-                        <motion.img
-                          key={carouselIndex}
-                          src={selectedWork.media?.[carouselIndex]?.url || selectedWork.img}
-                          alt={`${selectedWork.title} - ${carouselIndex + 1}`}
-                          className="max-w-full max-h-[60vh] sm:max-h-[65vh] md:max-h-[70vh] object-contain rounded-lg"
-                          initial={{ opacity: 0, x: 50 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -50 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </AnimatePresence>
-
-                      {selectedWork.media && selectedWork.media.length > 1 && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
-                            onClick={handlePrevious}
-                          >
-                            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background/90 h-8 w-8 sm:h-10 sm:w-10"
-                            onClick={handleNext}
-                          >
-                            <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
-                          </Button>
-                        </>
-                      )}
+                      {/* Description Section - Bottom Left */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="mt-auto space-y-4 sm:space-y-6"
+                      >
+                        <div className="space-y-2">
+                          <h2 className="text-xl sm:text-2xl md:text-3xl font-light tracking-wide text-foreground">
+                            {selectedWork.title}
+                          </h2>
+                          {selectedWork.year && (
+                            <p className="text-sm sm:text-base text-muted-foreground font-light">
+                              {selectedWork.year}
+                            </p>
+                          )}
+                          {selectedWork.category && (
+                            <p className="text-xs sm:text-sm text-muted-foreground font-light uppercase tracking-wider">
+                              {selectedWork.category}
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
                     </div>
 
-                    <div className="p-4 sm:p-6 border-t border-border/50">
-                      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
-                        <h3 className="text-lg sm:text-xl md:text-2xl font-light tracking-wide break-words">{selectedWork.title}</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground shrink-0">{selectedWork.year}</p>
-                      </div>
+                    {/* Right Column - Image Gallery */}
+                    <div className="relative bg-muted/30 overflow-y-auto">
+                      {/* Analog Close Button - Top Center (Reference Style) */}
+                      <motion.button
+                        onClick={handleCloseModal}
+                        className="absolute top-6 sm:top-8 left-1/2 -translate-x-1/2 z-20 px-6 py-2 text-xs sm:text-sm font-light tracking-[0.2em] uppercase text-foreground/60 hover:text-foreground transition-all duration-200"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        whileHover={{ opacity: 1 }}
+                      >
+                        Close
+                      </motion.button>
 
-                      {selectedWork.media && selectedWork.media.length > 1 && (
-                        <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                          {selectedWork.media.map((asset, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCarouselIndex(index)}
-                              className={`relative w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-md overflow-hidden border-2 transition flex-shrink-0 ${
-                                carouselIndex === index ? "border-foreground" : "border-border/50 hover:border-border"
-                              }`}
+                      {/* Image Gallery Grid */}
+                      <div className="p-6 sm:p-8 md:p-12 lg:p-16 pt-20 sm:pt-24">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                          {selectedWork.media && selectedWork.media.length > 0 ? (
+                            selectedWork.media.map((asset, index) => (
+                              <motion.div
+                                key={index}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5, delay: 0.1 * index, ease: [0.23, 1, 0.32, 1] }}
+                                className="relative group cursor-pointer"
+                                onClick={() => {
+                                  // Optional: Open image in fullscreen or lightbox
+                                  window.open(asset.url, "_blank")
+                                }}
+                              >
+                                <div className="aspect-square sm:aspect-[4/5] overflow-hidden bg-muted border border-border/30 hover:border-foreground/40 transition-colors duration-300">
+                                  <img
+                                    src={asset.url || selectedWork.img}
+                                    alt={`${selectedWork.title} - ${index + 1}`}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                                  />
+                                </div>
+                                {selectedWork.media && selectedWork.media.length > 1 && (
+                                  <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-light text-muted-foreground border border-border/50">
+                                    {index + 1}/{selectedWork.media.length}
+                                  </div>
+                                )}
+                              </motion.div>
+                            ))
+                          ) : (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.3 }}
+                              className="aspect-square sm:aspect-[4/5] overflow-hidden bg-muted border border-border/30"
                             >
                               <img
-                                src={asset.url || "/placeholder.svg"}
-                                alt={`Thumbnail ${index + 1}`}
+                                src={selectedWork.img}
+                                alt={selectedWork.title}
                                 className="w-full h-full object-cover"
                               />
-                            </button>
-                          ))}
+                            </motion.div>
+                          )}
                         </div>
-                      )}
-
-                      {selectedWork.media && selectedWork.media.length > 1 && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 text-center">
-                          {carouselIndex + 1} / {selectedWork.media.length}
-                        </p>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

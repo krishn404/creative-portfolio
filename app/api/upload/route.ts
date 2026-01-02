@@ -68,35 +68,22 @@ export async function POST(request: NextRequest) {
     console.log(`📤 Uploading image: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`)
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    // Convert buffer to data URI format for more reliable serverless upload
+    const base64Image = buffer.toString('base64')
+    const dataUri = `data:${file.type};base64,${base64Image}`
 
-    const upload = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder: "creative-portfolio",
-          resource_type: "image",
-          timeout: 60000,
-        },
-        (error, result) => {
-          if (error) {
-            console.error("❌ Cloudinary upload stream error:", error)
-            reject(error)
-          } else if (!result) {
-            console.error("❌ Cloudinary upload returned no result")
-            reject(new Error("Upload failed: No result from Cloudinary"))
-          } else {
-            console.log("✓ Upload successful:", result.public_id)
-            resolve({ secure_url: result.secure_url, public_id: result.public_id })
-          }
-        }
-      )
-
-      stream.on("error", (err) => {
-        console.error("❌ Cloudinary stream error:", err)
-        reject(err)
-      })
-
-      stream.end(buffer)
+    const upload = await cloudinary.uploader.upload(dataUri, {
+      folder: "creative-portfolio",
+      resource_type: "image",
+      timeout: 60000,
     })
+
+    if (!upload || !upload.secure_url || !upload.public_id) {
+      console.error("❌ Cloudinary upload returned invalid result")
+      throw new Error("Upload failed: Invalid response from Cloudinary")
+    }
+
+    console.log("✓ Upload successful:", upload.public_id)
 
     return NextResponse.json({ url: upload.secure_url, publicId: upload.public_id })
   } catch (error) {

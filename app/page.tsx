@@ -11,8 +11,8 @@ export default function Home() {
     <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Stickers />
       <Hero />
-      <Gallery />
       <About />
+      <Gallery />
       <Contact />
     </main>
   )

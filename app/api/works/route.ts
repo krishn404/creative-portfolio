@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       category: work.category,
       status: work.status,
       media: work.media,
+      showInAbout: work.showInAbout,
     })
 
     return NextResponse.json({ ok: true, id: result.id })

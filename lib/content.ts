@@ -7,6 +7,7 @@ export type WorkItem = {
   publicId?: string
   category?: "Posters" | "Thumbnails" | "Graphic Clothing"
   status?: "draft" | "published" | "archived"
+  showInAbout?: boolean
 }
 
 export type MediaAsset = {

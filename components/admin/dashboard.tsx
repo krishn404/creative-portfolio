@@ -245,27 +245,29 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     }
     setBusyMessage("Saving work...")
     setError(null)
-    try {
-      const saved = await actions.upsertWork({
-        id: work.id,
-        title: work.title,
-        img: work.img,
-        year: work.year,
-        publicId: work.publicId,
-        category: work.category as WorkCategory,
-        status: work.status,
-        media: work.media,
-      })
-      const savedWork: WorkItem = {
-        id: saved.id ?? work.id,
-        title: saved.title ?? work.title,
-        img: saved.img ?? work.img,
-        year: saved.year ?? work.year,
-        publicId: saved.public_id ?? work.publicId,
-        category: (saved.category ?? work.category) as WorkCategory,
-        status: (saved.status ?? work.status ?? "draft") as WorkStatus,
-        media: saved.media ?? work.media,
-      }
+  try {
+    const saved = await actions.upsertWork({
+      id: work.id,
+      title: work.title,
+      img: work.img,
+      year: work.year,
+      publicId: work.publicId,
+      category: work.category as WorkCategory,
+      status: work.status,
+      media: work.media,
+      showInAbout: work.showInAbout,
+    })
+    const savedWork: WorkItem = {
+      id: saved.id ?? work.id,
+      title: saved.title ?? work.title,
+      img: saved.img ?? work.img,
+      year: saved.year ?? work.year,
+      publicId: saved.public_id ?? work.publicId,
+      category: (saved.category ?? work.category) as WorkCategory,
+      status: (saved.status ?? work.status ?? "draft") as WorkStatus,
+      media: saved.media ?? work.media,
+      showInAbout: saved.showInAbout ?? work.showInAbout,
+    }
       setContent((prev) => ({
         ...prev,
         works: (prev.works ?? []).some((w) => w.id === work.id)
@@ -934,6 +936,24 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border border-border">
+              <input
+                type="checkbox"
+                id="showInAbout"
+                checked={newWork?.showInAbout ?? false}
+                onChange={(e) =>
+                  setNewWork((prev) => (prev ? { ...prev, showInAbout: e.target.checked } : prev))
+                }
+                className="w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="showInAbout" className="text-sm font-medium cursor-pointer flex-1">
+                Show in About Section
+              </label>
+              <span className="text-xs text-muted-foreground">
+                (Select up to 4 works to display as polaroid cards)
+              </span>
             </div>
 
             <div className="space-y-2">

@@ -18,6 +18,7 @@ export const listPublished = query({
       year: w.year,
       publicId: w.public_id,
       category: w.category,
+      showInAbout: w.show_in_about,
     }))
   },
 })
@@ -36,6 +37,7 @@ export const listAll = query({
       publicId: w.public_id,
       category: w.category,
       status: w.status,
+      showInAbout: w.show_in_about,
     }))
   },
 })
@@ -59,6 +61,7 @@ export const upsert = mutation({
     publicId: v.optional(v.string()),
     category: v.optional(v.string()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("archived"))),
+    showInAbout: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString()
@@ -78,6 +81,7 @@ export const upsert = mutation({
           public_id: args.publicId,
           category: args.category,
           status: args.status ?? existing.status,
+          show_in_about: args.showInAbout ?? existing.show_in_about,
           updated_at: now,
         })
         return { id: existing.id }
@@ -94,6 +98,7 @@ export const upsert = mutation({
       public_id: args.publicId,
       category: args.category,
       status: args.status ?? "draft",
+      show_in_about: args.showInAbout ?? false,
       created_at: now,
       updated_at: now,
     })

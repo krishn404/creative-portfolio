@@ -19,10 +19,12 @@ const BRAND_COLORS = {
   Canva: {
     backgroundColor: "linear-gradient(90deg, #00C6C8 0%, #3A7BD5 50%, #7F2EEA 100%)",
     textColor: "#FFFFFF",
+    iconColor: "#FFFFFF",
   },
   CapCut: {
     backgroundColor: "rgba(52, 50, 50, 0.56)",
-    textColor: "#FFFFFF"
+    textColor: "#FFFFFF",
+    iconColor: "#FFFFFF"
   },
 } as const
 
@@ -62,13 +64,14 @@ function CapCutIcon({ className, style }: { className?: string; style?: React.CS
   )
 }
 
-const defaultHeadline = "Building stories through design and creativity"
-const defaultParagraph =
-  "I am the Creative Head at The Blackbombay House, a music production company where I craft visual narratives that bridge sound and sight. My journey in creative work is driven by curiosity constantly exploring how ideas transform into compelling visuals that resonate. I work across social media, branding, and storytelling, using tools like Photoshop for detailed image work, CapCut for video editing, and Canva for quick, effective designs. Each project becomes a learning experience, a chance to refine my craft and discover new ways to communicate through design. I believe in the power of visual storytelling to connect with people, whether it's through a carefully composed poster, a dynamic social media campaign, or a video that captures a moment. My approach is hands-on and iterative, always questioning, always improving, always curious about what's possible when creativity meets intention."
+const defaultHeadline = "Creative Visual Storyteller"
 
-// Enhanced creative paragraph with more personality and tool mentions
-const creativeParagraph =
-  "I'm a creative explorer at heart, constantly curious about how ideas take shape. At The Blackbombay House, I weave visual stories that connect music with imagery, crafting narratives that feel both intentional and spontaneous. My process is hands-on I dive into Photoshop for intricate image work, experiment with CapCut to bring motion to static concepts, and leverage Canva for rapid ideation and client presentations. Each project teaches me something new, whether it's discovering an unexpected color combination, finding the perfect rhythm in a video edit, or learning how a simple design choice can amplify a message. I'm fascinated by the intersection of craft and curiosity, where technical skill meets creative intuition. My work spans social media campaigns, brand identities, and visual storytelling each piece a small experiment in communication. I believe the best creative work happens when you're willing to question, iterate, and stay open to what emerges in the process."
+const services = [
+  "Video Editing",
+  "Graphic Tees Design", 
+  "Music Posters",
+  "Corporate Designs"
+]
 
 // Inline badge component for tools - button-like, matches text height with brand colors
 function InlineBadge({
@@ -176,13 +179,6 @@ function parseParagraphWithBadges(text: string): (string | React.ReactElement)[]
 }
 
 export default function About() {
-  const { data } = useSWR<SiteContent>("/api/content", fetcher)
-  const headline = data?.about?.headline ?? defaultHeadline
-  // Always use the creative paragraph that includes tool names for badges
-  // This ensures badges are always visible
-  const paragraphText = creativeParagraph
-  const parsedContent = parseParagraphWithBadges(paragraphText)
-
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -191,26 +187,38 @@ export default function About() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-background flex items-center transition-colors duration-300 overflow-hidden"
+      className="relative min-h-screen py-20 sm:py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-background flex items-center transition-colors duration-300 overflow-hidden"
     >
-      {/* Subtle decorative elements */}
+      {/* Minimal animated background elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-0 w-px h-32 bg-gradient-to-b from-transparent via-border/30 to-transparent" />
-        <div className="absolute bottom-1/4 right-0 w-px h-32 bg-gradient-to-b from-transparent via-border/30 to-transparent" />
-        {/* Floating accent dots */}
         <motion.div
-          className="absolute top-1/3 right-1/4 w-1 h-1 rounded-full bg-foreground/20"
-          animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-gradient-to-br from-primary/5 to-transparent"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.1, 0.3]
+          }}
+          transition={{ 
+            duration: 8, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
         />
         <motion.div
-          className="absolute bottom-1/3 left-1/4 w-1 h-1 rounded-full bg-foreground/20"
-          animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-1/3 right-1/3 w-24 h-24 rounded-full bg-gradient-to-tl from-secondary/5 to-transparent"
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            opacity: [0.1, 0.3, 0.1]
+          }}
+          transition={{ 
+            duration: 6, 
+            repeat: Infinity, 
+            ease: "easeInOut",
+            delay: 2
+          }}
         />
       </div>
 
-      <div className="max-w-3xl mx-auto w-full relative z-10">
+      <div className="max-w-4xl mx-auto w-full relative z-10">
         <motion.div
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
@@ -221,100 +229,121 @@ export default function About() {
               transition: {
                 duration: 1.2,
                 ease: [0.23, 1, 0.32, 1],
+                staggerChildren: 0.1
               },
             },
           }}
-          className="space-y-8 sm:space-y-10 md:space-y-12"
+          className="text-center space-y-12 sm:space-y-16"
         >
-          {/* Section label */}
+          {/* Minimal section label */}
           <motion.div
             variants={{
-              hidden: { opacity: 0, filter: "blur(10px)", y: 10 },
+              hidden: { opacity: 0, y: 20 },
               visible: {
                 opacity: 1,
-                filter: "blur(0px)",
                 y: 0,
                 transition: {
                   duration: 0.8,
+                  ease: [0.23, 1, 0.32, 1],
+                },
+              },
+            }}
+          >
+            <p className="text-xs font-light tracking-[0.2em] uppercase text-muted-foreground">
+              About Me
+            </p>
+          </motion.div>
+
+          {/* Main headline with emphasis */}
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: {
+                  duration: 1,
                   delay: 0.2,
                   ease: [0.23, 1, 0.32, 1],
                 },
               },
             }}
-            className="flex items-center gap-3"
+            className="space-y-4"
           >
-            <div className="h-px w-8 bg-gradient-to-r from-transparent to-border/50" />
-            <p className="text-[10px] sm:text-xs font-light tracking-widest uppercase text-muted-foreground">
-              About
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light leading-tight tracking-tight">
+              I <span className="font-medium text-primary">edit videos</span>,{" "}
+              <span className="font-medium text-primary">design</span> graphics,{" "}
+              <span className="font-medium text-primary">create</span> posters
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl font-light text-foreground/70">
+              Creative Head at The BlackbombayHouse
             </p>
-            <div className="h-px flex-1 bg-gradient-to-r from-border/50 to-transparent" />
           </motion.div>
 
-          {/* Headline */}
-          <motion.h2
+          {/* Services grid with animation */}
+          <motion.div
             variants={{
-              hidden: { opacity: 0, filter: "blur(10px)", y: 20 },
+              hidden: { opacity: 0 },
               visible: {
                 opacity: 1,
-                filter: "blur(0px)",
-                y: 0,
                 transition: {
                   duration: 1,
-                  delay: 0.3,
-                  ease: [0.23, 1, 0.32, 1],
+                  delay: 0.4,
+                  staggerChildren: 0.15
                 },
               },
             }}
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light leading-tight tracking-tight text-foreground"
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl mx-auto"
           >
-            {headline}
-          </motion.h2>
-
-          {/* Main paragraph with inline badges */}
-          <motion.div
-            variants={{
-              hidden: { opacity: 0, filter: "blur(12px)" },
-              visible: {
-                opacity: 1,
-                filter: "blur(0px)",
-                transition: {
-                  duration: 1.4,
-                  delay: 0.5,
-                  ease: [0.23, 1, 0.32, 1],
-                },
-              },
-            }}
-            className="text-sm sm:text-base md:text-lg font-light leading-relaxed sm:leading-loose text-foreground/90"
-          >
-            <p className="max-w-none inline">
-              {parsedContent.map((part, index) => {
-                if (typeof part === "string") {
-                  return <span key={`text-${index}`}>{part}</span>
-                }
-                // Badge component - inline with text
-                return <React.Fragment key={part.key || `badge-${index}`}>{part}</React.Fragment>
-              })}
-            </p>
+            {services.map((service, index) => (
+              <motion.div
+                key={service}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.9, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    transition: {
+                      duration: 0.6,
+                      ease: [0.23, 1, 0.32, 1],
+                    },
+                  },
+                }}
+                whileHover={{ 
+                  scale: 1.05,
+                  transition: { duration: 0.2 }
+                }}
+                className="relative group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300" />
+                <div className="relative bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg p-4 sm:p-6 text-center">
+                  <p className="text-sm sm:text-base font-light text-foreground">
+                    {service}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
 
-          {/* CTA */}
+          {/* Minimal CTA */}
           <motion.div
             variants={{
-              hidden: { opacity: 0, filter: "blur(8px)" },
+              hidden: { opacity: 0, y: 20 },
               visible: {
                 opacity: 1,
-                filter: "blur(0px)",
+                y: 0,
                 transition: {
                   duration: 0.8,
-                  delay: 0.7,
+                  delay: 0.8,
                   ease: [0.23, 1, 0.32, 1],
                 },
               },
             }}
-            className="pt-4 sm:pt-6"
+            className="pt-8"
           >
-            <p className="text-xs sm:text-sm font-light text-muted-foreground">
-              Open for collaboration and creative roles.
+            <p className="text-sm font-light text-muted-foreground">
+              Open for creative collaborations
             </p>
           </motion.div>
         </motion.div>

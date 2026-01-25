@@ -80,7 +80,7 @@ export default function SpotifyGlassWidget() {
 
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Music player</p>
+      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently Listening</p>
 
       <motion.a
         href={hasData ? data!.url : "https://open.spotify.com"}
@@ -293,7 +293,7 @@ export default function SpotifyGlassWidget() {
 function SpotifyGlassSkeleton() {
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Music player</p>
+      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently Listening</p>
 
       <div
         className="relative bg-white/60 dark:bg-white/5 backdrop-blur-2xl border border-white/30 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] animate-pulse"

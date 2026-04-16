@@ -1,71 +1,240 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import type { CSSProperties, WheelEvent } from "react"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import type { WorkItem } from "@/lib/content"
+import { ArrowLeft, ArrowRight, Minus, Plus, X } from "lucide-react"
+import type { MediaAsset, WorkItem } from "@/lib/content"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+const categories = ["All", "Posters", "Thumbnails", "Graphic Clothing"] as const
+type Category = (typeof categories)[number]
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+const getWorkMedia = (work: WorkItem): MediaAsset[] => {
+  const media = work.media?.filter((asset) => asset.type === "image" && asset.url) ?? []
+  if (media.length > 0) {
+    return [...media].sort((a, b) => a.order - b.order)
+  }
+  return work.img ? [{ url: work.img, type: "image", order: 0 }] : []
+}
+
+const getCloudinaryPlaceholder = (url: string) => {
+  if (!url.includes("/upload/")) return url
+  return url.replace("/upload/", "/upload/f_auto,q_10,w_96,e_blur:800/")
+}
+
+function ProgressiveImage({
+  src,
+  alt,
+  className,
+  imgClassName,
+  imageStyle,
+  priority = false,
+  onClick,
+  onWheel,
+  draggable = false,
+}: {
+  src: string
+  alt: string
+  className?: string
+  imgClassName?: string
+  imageStyle?: CSSProperties
+  priority?: boolean
+  onClick?: () => void
+  onWheel?: (event: WheelEvent<HTMLDivElement>) => void
+  draggable?: boolean
+}) {
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    setLoaded(false)
+  }, [src])
+
+  return (
+    <div className={`relative overflow-hidden bg-muted ${className ?? ""}`} onClick={onClick} onWheel={onWheel}>
+      <img
+        src={getCloudinaryPlaceholder(src)}
+        alt=""
+        aria-hidden="true"
+        className={`absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-300 ${
+          loaded ? "opacity-0" : "opacity-100"
+        }`}
+      />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br from-muted via-muted/70 to-background/10 transition-opacity duration-300 ${
+          loaded ? "opacity-0" : "opacity-100"
+        }`}
+      />
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        draggable={draggable}
+        onLoad={() => setLoaded(true)}
+        style={imageStyle}
+        className={`relative h-full w-full transition duration-500 ${loaded ? "opacity-100" : "opacity-0"} ${
+          imgClassName ?? "object-cover"
+        }`}
+      />
+    </div>
+  )
+}
 
 export default function Gallery() {
   const { data, isLoading } = useSWR<{ works: WorkItem[] }>("/api/works", fetcher)
   const works = data?.works || []
-  const [category, setCategory] = useState<"All" | "Posters" | "Thumbnails" | "Graphic Clothing">("All")
-  const [selectedWork, setSelectedWork] = useState<WorkItem | null>(null)
-  const [carouselIndex, setCarouselIndex] = useState(0)
+  const [category, setCategory] = useState<Category>("All")
+  const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null)
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0)
   const [hoveredWorkId, setHoveredWorkId] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)
+  const [isHydrated, setIsHydrated] = useState(false)
+  const scrollPositionRef = useRef(0)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   })
 
-  const filtered = category === "All" ? works : works.filter((w: WorkItem) => w.category === category)
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  const filtered = useMemo(
+    () => (category === "All" ? works : works.filter((work: WorkItem) => work.category === category)),
+    [category, works],
+  )
+
+  const selectedWork = useMemo(
+    () => filtered.find((work) => work.id === selectedWorkId) ?? works.find((work) => work.id === selectedWorkId) ?? null,
+    [filtered, selectedWorkId, works],
+  )
+
+  const selectedMedia = useMemo(() => (selectedWork ? getWorkMedia(selectedWork) : []), [selectedWork])
 
   const getDisplayMedia = (work: WorkItem, isHovered: boolean): string => {
-    const media = work.media || [{ url: work.img, type: "image" as const, order: 0 }]
+    const media = getWorkMedia(work)
     if (isHovered && media.length > 1) {
       return media[1].url
     }
     return media[0]?.url || work.img
   }
 
-  const handleWorkClick = (work: WorkItem) => {
-    setSelectedWork(work)
-    setCarouselIndex(0)
-  }
+  const getWorkNumber = useCallback(
+    (work: WorkItem): number => {
+      const index = filtered.findIndex((item) => item.id === work.id)
+      return index >= 0 ? index + 1 : works.findIndex((item) => item.id === work.id) + 1
+    },
+    [filtered, works],
+  )
 
-  const handleCloseModal = useCallback(() => {
-    setSelectedWork(null)
-    setCarouselIndex(0)
+  const resetViewerState = useCallback(() => {
+    setActiveMediaIndex(0)
+    setZoom(1)
   }, [])
 
-  // Prevent body scroll and handle ESC key when modal is open
+  const closeModalState = useCallback(() => {
+    setSelectedWorkId(null)
+    resetViewerState()
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollPositionRef.current)
+    })
+  }, [resetViewerState])
+
+  const openWork = useCallback(
+    (work: WorkItem, index = 0) => {
+      scrollPositionRef.current = window.scrollY
+      setSelectedWorkId(work.id)
+      setActiveMediaIndex(index)
+      setZoom(1)
+      window.history.pushState({ galleryModal: true, workId: work.id }, "", `#work-${work.id}`)
+    },
+    [],
+  )
+
+  const closeWork = useCallback(() => {
+    if (window.history.state?.galleryModal) {
+      window.history.back()
+      return
+    }
+    closeModalState()
+  }, [closeModalState])
+
+  const goToMedia = useCallback(
+    (index: number) => {
+      if (!selectedMedia.length) return
+      setActiveMediaIndex((index + selectedMedia.length) % selectedMedia.length)
+      setZoom(1)
+    },
+    [selectedMedia.length],
+  )
+
+  const goToNextMedia = useCallback(() => {
+    if (selectedMedia.length <= 1) return
+    goToMedia(activeMediaIndex + 1)
+  }, [activeMediaIndex, goToMedia, selectedMedia.length])
+
+  const goToPreviousMedia = useCallback(() => {
+    if (selectedMedia.length <= 1) return
+    goToMedia(activeMediaIndex - 1)
+  }, [activeMediaIndex, goToMedia, selectedMedia.length])
+
   useEffect(() => {
-    if (selectedWork) {
-      document.body.style.overflow = "hidden"
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          handleCloseModal()
-        }
+    if (!selectedWork) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    document.body.classList.add("hide-page-blur")
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        closeWork()
       }
-      document.addEventListener("keydown", handleEscape)
-      return () => {
-        document.body.style.overflow = ""
-        document.removeEventListener("keydown", handleEscape)
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault()
+        goToNextMedia()
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault()
+        goToPreviousMedia()
+      }
+
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault()
+        setZoom((current) => clamp(Number((current + 0.25).toFixed(2)), 1, 3))
+      }
+
+      if (event.key === "-") {
+        event.preventDefault()
+        setZoom((current) => clamp(Number((current - 0.25).toFixed(2)), 1, 3))
       }
     }
-  }, [selectedWork, handleCloseModal])
 
-  // Get the index of the selected work in the filtered list for numbering
-  const getWorkNumber = (work: WorkItem): number => {
-    const filtered = category === "All" ? works : works.filter((w: WorkItem) => w.category === category)
-    return filtered.findIndex((w) => w.id === work.id) + 1
-  }
+    const handlePopState = () => {
+      closeModalState()
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("popstate", handlePopState)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.classList.remove("hide-page-blur")
+      document.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("popstate", handlePopState)
+    }
+  }, [closeModalState, closeWork, goToNextMedia, goToPreviousMedia, selectedWork])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -92,29 +261,40 @@ export default function Gallery() {
 
   return (
     <>
-      <section ref={ref} className="min-h-screen py-12 md:py-20 px-4 bg-background transition-colors duration-300">
-        <div className="max-w-7xl mx-auto">
+      <section ref={ref} className="min-h-screen bg-background px-4 py-12 transition-colors duration-300 md:py-20">
+        <div className="mx-auto max-w-7xl">
           <motion.div
-            className="mb-12 md:mb-16"
+            className="mb-10 space-y-3 md:mb-14"
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="text-xs font-light tracking-widest uppercase text-muted-foreground mb-2">Selected works</p>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight text-foreground">
-              Poster Collection
-            </h2>
+            <p className="text-xs font-light uppercase tracking-widest text-muted-foreground">Selected works</p>
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-3xl font-light tracking-tight text-foreground md:text-4xl lg:text-5xl">
+                  Poster Collection
+                </h2>
+                <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
+                  Browse the work without leaving the page. Open any project for a full viewer, keyboard navigation, and
+                  inline details.
+                </p>
+              </div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {filtered.length} {filtered.length === 1 ? "project" : "projects"}
+              </p>
+            </div>
           </motion.div>
 
-          <div className="flex flex-wrap gap-2 sm:gap-2.5 md:gap-3 mb-6">
-            {["All", "Posters", "Thumbnails", "Graphic Clothing"].map((cat) => (
+          <div className="mb-8 flex flex-wrap gap-2.5">
+            {categories.map((cat) => (
               <motion.button
                 key={cat}
-                onClick={() => setCategory(cat as any)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[11px] sm:text-xs md:text-sm rounded-full border transition ${
+                onClick={() => setCategory(cat)}
+                className={`rounded-full border px-4 py-2 text-xs transition sm:text-sm ${
                   category === cat
                     ? "border-foreground bg-foreground text-background"
-                    : "border-border text-foreground hover:border-foreground/40"
+                    : "border-border text-foreground hover:border-foreground/40 hover:bg-muted/50"
                 }`}
                 whileTap={{ scale: 0.97 }}
                 whileHover={{ y: -2 }}
@@ -128,52 +308,64 @@ export default function Gallery() {
             <p className="text-muted-foreground">Loading works...</p>
           ) : (
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
               variants={containerVariants}
               initial="hidden"
               animate={inView ? "visible" : "hidden"}
             >
               {filtered.length === 0 ? (
-                <p className="text-muted-foreground col-span-full">No works yet. Check back soon.</p>
+                <p className="col-span-full text-muted-foreground">No works yet. Check back soon.</p>
               ) : (
-                filtered.map((poster: WorkItem) => (
-                  <motion.div
-                    key={poster.id}
+                filtered.map((work: WorkItem) => (
+                  <motion.button
+                    key={work.id}
+                    type="button"
                     variants={itemVariants}
                     whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                    className="group cursor-pointer"
-                    onClick={() => handleWorkClick(poster)}
-                    onMouseEnter={() => setHoveredWorkId(poster.id)}
+                    className="group cursor-pointer text-left"
+                    onClick={() => openWork(work)}
+                    onMouseEnter={() => setHoveredWorkId(work.id)}
                     onMouseLeave={() => setHoveredWorkId(null)}
                   >
-                    <div className="aspect-square rounded-sm shadow-sm border border-border overflow-hidden transition-shadow duration-500 group-hover:shadow-md relative">
+                    <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow duration-500 group-hover:shadow-lg">
                       <AnimatePresence mode="wait">
-                        <motion.img
-                          key={hoveredWorkId === poster.id ? "hover" : "default"}
-                          src={getDisplayMedia(poster, hoveredWorkId === poster.id)}
-                          alt={poster.title}
-                          className="w-full h-full object-cover"
+                        <motion.div
+                          key={hoveredWorkId === work.id ? "hover" : "default"}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          transition={{ duration: 0.4 }}
-                        />
+                          transition={{ duration: 0.35 }}
+                          className="absolute inset-0"
+                        >
+                          <ProgressiveImage
+                            src={getDisplayMedia(work, hoveredWorkId === work.id)}
+                            alt={work.title}
+                            priority={false}
+                            className="h-full w-full"
+                            imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                          />
+                        </motion.div>
                       </AnimatePresence>
 
-                      <motion.div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
 
-                      {poster.media && poster.media.length > 1 && (
-                        <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium">
-                          {poster.media.length} items
+                      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-[0.2em] text-white/75">
+                            {work.category ?? "Selected Work"}
+                          </p>
+                          <h3 className="mt-1 line-clamp-1 text-base font-medium text-white">{work.title}</h3>
                         </div>
-                      )}
-                    </div>
+                        {work.year ? <p className="shrink-0 text-sm text-white/85">{work.year}</p> : null}
+                      </div>
 
-                    <div className="mt-4 flex justify-between items-baseline gap-2">
-                      <h3 className="text-sm font-light tracking-wide text-foreground line-clamp-1">{poster.title}</h3>
-                      <p className="text-xs text-muted-foreground shrink-0">{poster.year}</p>
+                      {getWorkMedia(work).length > 1 ? (
+                        <div className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-xs text-white backdrop-blur-sm">
+                          {getWorkMedia(work).length} images
+                        </div>
+                      ) : null}
                     </div>
-                  </motion.div>
+                  </motion.button>
                 ))
               )}
             </motion.div>
@@ -181,137 +373,214 @@ export default function Gallery() {
         </div>
       </section>
 
-      {typeof window !== "undefined" &&
+      {isHydrated &&
+        typeof window !== "undefined" &&
         createPortal(
           <AnimatePresence>
-            {selectedWork && (
+            {selectedWork ? (
               <>
-                {/* Custom overlay with complete blur */}
-                <motion.div
-                  className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xl"
+                <motion.button
+                  type="button"
+                  aria-label="Close work overlay"
+                  className="fixed inset-0 z-[110] bg-black/55"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                  onClick={handleCloseModal}
+                  transition={{ duration: 0.22 }}
+                  onClick={closeWork}
                 />
-                
-                {/* Modal content - Reference UI layout */}
-                <motion.div
-                  className="fixed inset-0 z-50 w-full h-full bg-background overflow-hidden"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="relative w-full h-full grid grid-cols-1 lg:grid-cols-2">
-                    {/* Left Column - Post Number, Description */}
-                    <div className="relative bg-background flex flex-col p-6 sm:p-8 md:p-12 lg:p-16">
-                      {/* Post Number - Top Left */}
-                      <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="mb-auto"
-                      >
-                        <p className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif text-foreground/20 leading-none">
-                          {getWorkNumber(selectedWork)}
-                        </p>
-                      </motion.div>
 
-                      {/* Description Section - Bottom Left */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="mt-auto space-y-4 sm:space-y-6"
+                <motion.div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={selectedWork.title}
+                  className="fixed inset-0 z-[120] p-3 md:p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <div
+                    className="flex h-full flex-col overflow-hidden rounded-[28px] border border-border/70 bg-background shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-6">
+                      <button
+                        type="button"
+                        onClick={closeWork}
+                        className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm text-foreground transition hover:bg-muted"
                       >
-                        <div className="space-y-2">
-                          <h2 className="text-xl sm:text-2xl md:text-3xl font-light tracking-wide text-foreground">
-                            {selectedWork.title}
-                          </h2>
-                          {selectedWork.year && (
-                            <p className="text-sm sm:text-base text-muted-foreground font-light">
-                              {selectedWork.year}
-                            </p>
-                          )}
-                          {selectedWork.category && (
-                            <p className="text-xs sm:text-sm text-muted-foreground font-light uppercase tracking-wider">
-                              {selectedWork.category}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                      </button>
+
+                      <div className="hidden text-center md:block">
+                        <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Open Work</p>
+                        <p className="text-sm text-foreground">
+                          {activeMediaIndex + 1} / {Math.max(selectedMedia.length, 1)}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={closeWork}
+                        aria-label="Close modal"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
 
-                    {/* Right Column - Image Gallery */}
-                    <div className="relative bg-muted/30 overflow-y-auto">
-                      {/* Analog Close Button - Top Center (Reference Style) */}
-                      <motion.button
-                        onClick={handleCloseModal}
-                        className="absolute top-6 sm:top-8 left-1/2 -translate-x-1/2 z-20 px-6 py-2 text-xs sm:text-sm font-light tracking-[0.2em] uppercase text-foreground/60 hover:text-foreground transition-all duration-200"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        whileHover={{ opacity: 1 }}
-                      >
-                        Close
-                      </motion.button>
+                    <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
+                      <aside className="overflow-y-auto border-b border-border/70 bg-card/60 p-5 lg:border-b-0 lg:border-r lg:p-6">
+                        <div className="space-y-6 lg:sticky lg:top-0">
+                          <div className="space-y-3">
+                            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                              Work {String(getWorkNumber(selectedWork)).padStart(2, "0")}
+                            </p>
+                            <div className="space-y-2">
+                              <h3 className="text-2xl font-light tracking-tight text-foreground">{selectedWork.title}</h3>
+                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                                {selectedWork.year ? <span>{selectedWork.year}</span> : null}
+                                {selectedWork.category ? <span>{selectedWork.category}</span> : null}
+                              </div>
+                            </div>
+                          </div>
 
-                      {/* Image Gallery Grid */}
-                      <div className="p-6 sm:p-8 md:p-12 lg:p-16 pt-20 sm:pt-24">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                          {selectedWork.media && selectedWork.media.length > 0 ? (
-                            selectedWork.media.map((asset, index) => (
-                              <motion.div
-                                key={index}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.5, delay: 0.1 * index, ease: [0.23, 1, 0.32, 1] }}
-                                className="relative group cursor-pointer"
-                                onClick={() => {
-                                  // Optional: Open image in fullscreen or lightbox
-                                  window.open(asset.url, "_blank")
-                                }}
-                              >
-                                <div className="aspect-square sm:aspect-[4/5] overflow-hidden bg-muted border border-border/30 hover:border-foreground/40 transition-colors duration-300">
-                                  <img
-                                    src={asset.url || selectedWork.img}
-                                    alt={`${selectedWork.title} - ${index + 1}`}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Gallery</p>
+                              <p className="text-sm text-muted-foreground">
+                                {selectedMedia.length} {selectedMedia.length === 1 ? "image" : "images"}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-3">
+                              {selectedMedia.map((asset, index) => (
+                                <button
+                                  key={`${asset.url}-${index}`}
+                                  type="button"
+                                  onClick={() => goToMedia(index)}
+                                  className={`overflow-hidden rounded-xl border transition ${
+                                    index === activeMediaIndex
+                                      ? "border-foreground shadow-md"
+                                      : "border-border hover:border-foreground/40"
+                                  }`}
+                                >
+                                  <ProgressiveImage
+                                    src={asset.url}
+                                    alt={`${selectedWork.title} thumbnail ${index + 1}`}
+                                    className="aspect-square"
+                                    imgClassName="h-full w-full object-cover"
                                   />
-                                </div>
-                                {selectedWork.media && selectedWork.media.length > 1 && (
-                                  <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-light text-muted-foreground border border-border/50">
-                                    {index + 1}/{selectedWork.media.length}
-                                  </div>
-                                )}
-                              </motion.div>
-                            ))
-                          ) : (
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 0.3 }}
-                              className="aspect-square sm:aspect-[4/5] overflow-hidden bg-muted border border-border/30"
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </aside>
+
+                      <div className="relative flex min-h-0 flex-col bg-muted/20">
+                        <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-6">
+                          <div className="text-sm text-muted-foreground">
+                            {selectedMedia.length > 1 ? "Use arrows, swipe, or thumbnails to navigate." : "Single artwork view."}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setZoom((current) => clamp(Number((current - 0.25).toFixed(2)), 1, 3))}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition hover:bg-muted"
+                              aria-label="Zoom out"
                             >
-                              <img
-                                src={selectedWork.img}
-                                alt={selectedWork.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </motion.div>
-                          )}
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <div className="min-w-14 text-center text-sm text-foreground">{Math.round(zoom * 100)}%</div>
+                            <button
+                              type="button"
+                              onClick={() => setZoom((current) => clamp(Number((current + 0.25).toFixed(2)), 1, 3))}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition hover:bg-muted"
+                              aria-label="Zoom in"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="relative min-h-0 flex-1">
+                          {selectedMedia.length > 1 ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={goToPreviousMedia}
+                                className="absolute left-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
+                                aria-label="Previous image"
+                              >
+                                <ArrowLeft className="h-5 w-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={goToNextMedia}
+                                className="absolute right-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
+                                aria-label="Next image"
+                              >
+                                <ArrowRight className="h-5 w-5" />
+                              </button>
+                            </>
+                          ) : null}
+
+                          <div
+                            className="flex h-full items-center justify-center overflow-auto p-4 md:p-8"
+                            onTouchStart={(event) => {
+                              const touch = event.touches[0]
+                              touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+                            }}
+                            onTouchEnd={(event) => {
+                              const start = touchStartRef.current
+                              if (!start) return
+                              const touch = event.changedTouches[0]
+                              const deltaX = touch.clientX - start.x
+                              const deltaY = touch.clientY - start.y
+                              if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                                if (deltaX < 0) goToNextMedia()
+                                if (deltaX > 0) goToPreviousMedia()
+                              }
+                              touchStartRef.current = null
+                            }}
+                          >
+                            <AnimatePresence mode="wait">
+                              <motion.div
+                                key={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.22 }}
+                                className="flex h-full w-full items-center justify-center"
+                              >
+                                <ProgressiveImage
+                                  src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
+                                  alt={`${selectedWork.title} image ${activeMediaIndex + 1}`}
+                                  className="flex max-h-full w-full items-center justify-center rounded-2xl"
+                                  imgClassName="mx-auto max-h-full w-auto max-w-full object-contain transition-transform duration-200"
+                                  imageStyle={{ transform: `scale(${zoom})` }}
+                                  onClick={() => setZoom((current) => (current > 1 ? 1 : 2))}
+                                  onWheel={(event) => {
+                                    event.preventDefault()
+                                    const direction = event.deltaY > 0 ? -0.2 : 0.2
+                                    setZoom((current) => clamp(Number((current + direction).toFixed(2)), 1, 3))
+                                  }}
+                                />
+                              </motion.div>
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </motion.div>
               </>
-            )}
+            ) : null}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
     </>
   )

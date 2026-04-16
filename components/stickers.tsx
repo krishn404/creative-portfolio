@@ -23,6 +23,16 @@ const STICKER_POSITIONS: StickerPosition[] = [
   { x: 15, y: 80, rotation: 10, scale: 1.1 }
 ]
 
+const MOBILE_STICKER_POSITIONS: StickerPosition[] = [
+  { x: 12, y: 10, rotation: -8, scale: 0.62 },
+  { x: 70, y: 12, rotation: 12, scale: 0.58 },
+  { x: 76, y: 30, rotation: -5, scale: 0.65 },
+  { x: 78, y: 52, rotation: 15, scale: 0.6 },
+  { x: 12, y: 56, rotation: -12, scale: 0.62 },
+  { x: 68, y: 72, rotation: 8, scale: 0.8 },
+  { x: 8, y: 78, rotation: 10, scale: 0.72 },
+]
+
 interface StickerProps {
   src: string
   index: number
@@ -34,25 +44,24 @@ function Sticker({ src, index, position }: StickerProps) {
   const [isHovered, setIsHovered] = useState(false)
   const stickerRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
-  
-  // Responsive scale: reduce by 30% on mobile to prevent overlap while maintaining visibility
-  const responsiveScale = isMobile ? position.scale * 0.7 : position.scale
-  
-  // Update scale when mobile state changes
-  useEffect(() => {
-    const currentScale = isMobile ? position.scale * 0.4 : position.scale
-    // The scale will be applied through the animate prop, which will update on re-render
-  }, [isMobile, position.scale])
-  
-  // Convert percentage to pixel values (relative to viewport, but will scroll with page)
+  const activePosition = isMobile ? MOBILE_STICKER_POSITIONS[index] ?? position : position
+
+  const responsiveScale = isMobile ? activePosition.scale : position.scale
+
+  // Convert bounded percentages to pixel values so mobile stickers stay inside safe margins.
   const getPixelPosition = useCallback(() => {
     if (typeof window === "undefined") return { x: 0, y: 0 }
-    // Use viewport dimensions for positioning, but stickers will scroll naturally with absolute positioning
+    const currentPosition = isMobile ? MOBILE_STICKER_POSITIONS[index] ?? position : position
+    const insetX = isMobile ? 16 : 0
+    const insetY = isMobile ? 12 : 0
+    const width = Math.max(window.innerWidth - insetX * 2, 0)
+    const height = Math.max(window.innerHeight - insetY * 2, 0)
+
     return {
-      x: (position.x / 100) * window.innerWidth,
-      y: (position.y / 100) * window.innerHeight,
+      x: insetX + (currentPosition.x / 100) * width,
+      y: insetY + (currentPosition.y / 100) * height,
     }
-  }, [position])
+  }, [index, isMobile, position])
 
   // Get center position for intro animation
   const getCenterPosition = useCallback(() => {
@@ -109,11 +118,11 @@ function Sticker({ src, index, position }: StickerProps) {
   // Animate rotation on mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      rotation.set(position.rotation)
+      rotation.set(activePosition.rotation)
     }, 600 + index * 150) // Same stagger as position animation
     
     return () => clearTimeout(timer)
-  }, [rotation, position.rotation, index])
+  }, [activePosition.rotation, index, rotation])
   
   // Scale on hover - use motion value for transform (responsive)
   const hoverState = useMotionValue(0)
@@ -206,7 +215,7 @@ function Sticker({ src, index, position }: StickerProps) {
       dragElastic={0}
       dragMomentum={false}
     >
-      <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+      <div className="relative h-[clamp(2.75rem,10vw,3.5rem)] w-[clamp(2.75rem,10vw,3.5rem)] sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24">
         <Image
           src={src}
           alt={`Sticker ${index + 1}`}
@@ -234,7 +243,7 @@ export default function Stickers() {
   }
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1] min-h-screen">
+    <div className="absolute inset-0 z-[1] min-h-screen overflow-hidden pointer-events-none">
       {stickerPaths.map((path, index) => {
         const position = STICKER_POSITIONS[index]
         if (!position) return null

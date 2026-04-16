@@ -144,6 +144,11 @@ body.hide-admin-blur .gradual-blur {
   display: none !important;
 }
 
+/* Hide page blur while fullscreen overlays are active on the main site */
+body.hide-page-blur .gradual-blur-page {
+  display: none !important;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

@@ -200,7 +200,7 @@ export default function About() {
           </div>
         </div>
 
-        <div className="absolute inset-0 z-20 pointer-events-none">
+        <div className="absolute inset-0 z-20 hidden pointer-events-none md:block">
           {!isLoading && posterImages.length > 0 && posterImages.map((poster, i) => {
             // Safety check for POS array
             if (i >= POS.length) return null

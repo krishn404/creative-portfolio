@@ -239,6 +239,15 @@ const ProfileCard = ({
 
   useEffect(() => {
     if (!recorderState.isOpen) return
+    document.body.classList.add("hide-page-blur")
+
+    return () => {
+      document.body.classList.remove("hide-page-blur")
+    }
+  }, [recorderState.isOpen])
+
+  useEffect(() => {
+    if (!recorderState.isOpen) return
     const isTypingContext = () => {
       const active = document.activeElement
       if (!(active instanceof HTMLElement)) return false
@@ -688,7 +697,7 @@ const ProfileCard = ({
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="absolute inset-0 bg-black/50 backdrop-blur-md"
+              className="absolute inset-0 bg-black/60"
               onClick={closeModal}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -702,7 +711,7 @@ const ProfileCard = ({
               className={`relative z-[101] w-full ${
                 isMobile
                   ? "h-[92vh] rounded-t-[2rem] bg-[#20211e] border border-white/10 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
-                  : "max-w-xl rounded-[2rem] bg-[#20211e] border border-white/10 p-6 shadow-2xl"
+                  : "max-w-xl rounded-[2rem] bg-[#20211e] border border-white/10 p-6 shadow-sm"
               }`}
               initial={{
                 opacity: 0,
@@ -724,7 +733,7 @@ const ProfileCard = ({
               }}
             >
               {/* ── Header ── */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-white/50">Share your idea</p>
                   <p className="text-sm text-white/70">Voice first, text fallback</p>
@@ -739,16 +748,30 @@ const ProfileCard = ({
               </div>
 
               {/* ── Horizontal layout: recorder left, fields right ── */}
-              <div className="flex gap-3 mb-3">
+              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4 mb-4">
 
                 {/* Left: recorder */}
-                <div className="flex flex-col items-center justify-between rounded-2xl border border-white/10 bg-black/20 p-3 w-[140px] flex-shrink-0">
+                <div className="flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-black/10 p-3">
                   <div className="w-full">
-                    <div className="flex items-center justify-between text-[10px] text-white/50 mb-1.5">
-                      <span>{recorderState.cancelIntent ? "← cancel" : "hold to rec"}</span>
+                    <div className="flex items-center justify-between text-[11px] text-white/60">
+                      <span>{recorderState.cancelIntent ? "Cancel" : "Hold to record"}</span>
                       <span className={recorderState.flow === "recording" ? "text-[#ccff33]" : ""}>{formattedTime}</span>
                     </div>
-                    <canvas ref={waveCanvasRef} width={200} height={32} className="w-full h-8 rounded-lg bg-black/30 mb-2" />
+
+                    {(recorderState.flow === "recording" || recorderState.flow === "processing") && (
+                      <canvas
+                        ref={waveCanvasRef}
+                        width={200}
+                        height={32}
+                        className="w-full h-7 rounded-lg bg-black/15 border border-white/5"
+                      />
+                    )}
+                    {!(recorderState.flow === "recording" || recorderState.flow === "processing") && (
+                      <div
+                        className="w-full h-7 rounded-lg bg-black/10 border border-white/5"
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
                   <button
                     type="button"
@@ -757,12 +780,12 @@ const ProfileCard = ({
                     onPointerUp={onPressEnd}
                     onPointerCancel={() => stopRecording(true)}
                     disabled={recorderState.flow === "processing"}
-                    className={`w-14 h-14 rounded-full border flex items-center justify-center transition-all duration-200 ${
+                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border transition-colors duration-200 ${
                       recorderState.flow === "recording"
                         ? recorderState.cancelIntent
-                          ? "bg-red-500/25 border-red-400 text-red-300 scale-95"
-                          : "bg-[#ccff33]/20 border-[#ccff33] text-[#ccff33] scale-105"
-                        : "bg-white/5 border-white/20 text-white hover:scale-105"
+                          ? "bg-red-500/15 border-red-400/50 text-red-200"
+                          : "bg-[#ccff33]/15 border-[#ccff33]/60 text-[#ccff33]"
+                        : "bg-white/5 border-white/15 text-white/80 hover:bg-white/10"
                     } disabled:opacity-40 disabled:cursor-not-allowed`}
                     aria-label="Hold to record voice"
                   >
@@ -773,11 +796,11 @@ const ProfileCard = ({
                 </div>
 
                 {/* Right: required fields */}
-                <div className="flex flex-col gap-2 flex-1">
+                <div className="flex flex-col gap-4">
                   {/* Transcript preview */}
                   {(recorderState.flow === "preview" || recorderState.flow === "confirm" || recorderState.flow === "success") && (
-                    <div className="rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5">
-                      <p className="text-[10px] text-white/40 mb-0.5">Understood</p>
+                    <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+                      <p className="text-xs text-white/50 mb-1">Understood</p>
                       <p className="text-xs text-white/80 leading-snug line-clamp-2">
                         {recorderState.draft.transcript || recorderState.draft.textFallback}
                       </p>
@@ -795,7 +818,7 @@ const ProfileCard = ({
                       onChange={(e) => dispatch({ type: "SET_TEXT_FALLBACK", value: e.target.value })}
                       placeholder="Describe what you need..."
                       rows={2}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ccff33]/60 resize-none"
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ccff33]/60 resize-none min-h-[88px]"
                     />
                   </label>
 
@@ -808,7 +831,7 @@ const ProfileCard = ({
                       value={contactDetail}
                       onChange={(e) => setContactDetail(e.target.value)}
                       placeholder="@handle or email@..."
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ccff33]/60"
+                      className="w-full h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#ccff33]/60"
                     />
                   </label>
                 </div>
@@ -816,7 +839,7 @@ const ProfileCard = ({
 
               {/* ── Tags row — always visible after preview ── */}
               {(recorderState.flow === "preview" || recorderState.flow === "confirm" || recorderState.flow === "success") && (
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   {renderTagDropdown("projectType", "Type", recorderState.draft.tags.projectType)}
                   {renderTagDropdown("urgency", "Urgency", recorderState.draft.tags.urgency)}
                   {renderTagDropdown("budgetSignal", "Budget", recorderState.draft.tags.budgetSignal)}
@@ -825,14 +848,14 @@ const ProfileCard = ({
 
               {/* ── Permission denied notice ── */}
               {recorderState.permissionDenied && (
-                <p className="text-[10px] text-amber-300 mb-2">
+                <p className="text-xs text-amber-300 mb-4">
                   Mic blocked — fill in your brief above to continue.
                 </p>
               )}
 
               {/* ── Confirm panel (compact) ── */}
               {recorderState.flow === "confirm" && (
-                <div className="flex items-center justify-between rounded-lg border border-[#ccff33]/20 bg-[#ccff33]/8 px-3 py-2 mb-3">
+                <div className="flex items-center justify-between rounded-xl border border-[#ccff33]/20 bg-[#ccff33]/10 px-4 py-3 mb-4">
                   <div className="flex items-center gap-2 text-[#ddf98c]">
                     <CalendarClock className="w-3.5 h-3.5 flex-shrink-0" />
                     <button
@@ -855,7 +878,7 @@ const ProfileCard = ({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
-                    className="grid grid-cols-2 gap-2 mb-3"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"
                   >
                     <NeumorphWrapper className="rounded-lg border-white/10 bg-[#2a2b26] after:border-[#47483f]">
                       <input
@@ -881,13 +904,13 @@ const ProfileCard = ({
 
               {/* ── Success / Action row ── */}
               {recorderState.flow === "success" ? (
-                <div className="rounded-xl border border-[#ccff33]/30 bg-[#ccff33]/10 p-3 text-center">
+                <div className="rounded-xl border border-[#ccff33]/30 bg-[#ccff33]/10 p-4 text-center">
                   <Check className="w-5 h-5 mx-auto text-[#ccff33] mb-1" />
                   <p className="text-sm font-medium text-white">Idea received.</p>
                   <p className="text-xs text-white/60 mt-0.5">Response within 6 hours.</p>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="grid gap-3 pt-2">
                   <button
                     onClick={() => dispatch({ type: "GO_CONFIRM" })}
                     disabled={
@@ -895,7 +918,7 @@ const ProfileCard = ({
                       !recorderState.draft.textFallback.trim() ||
                       !contactDetail.trim()
                     }
-                    className="flex-1 rounded-xl bg-[#ccff33] text-[#20211e] text-sm font-semibold px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-95 transition"
+                    className="w-full rounded-xl bg-[#ccff33] text-[#20211e] text-sm font-semibold px-4 py-3 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-95 transition"
                   >
                     {recorderState.flow === "preview" ? "Confirm" : "Review & send"}
                   </button>
@@ -906,10 +929,11 @@ const ProfileCard = ({
                       !recorderState.draft.textFallback.trim() ||
                       !contactDetail.trim()
                     }
-                    className="rounded-xl border border-white/15 px-3 py-2.5 text-white/85 disabled:opacity-40"
+                    className="w-full rounded-xl border border-white/15 bg-transparent px-4 py-3 text-sm text-white/75 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/5 transition flex items-center justify-center gap-2"
                     aria-label="Submit idea"
                   >
                     <Send className="w-4 h-4" />
+                    <span>Send</span>
                   </button>
                 </div>
               )}

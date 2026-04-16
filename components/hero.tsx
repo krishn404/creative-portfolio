@@ -26,44 +26,55 @@ export default function HeroSection() {
   const time = now.toLocaleTimeString()
 
   return (
-    <section className="relative w-full min-h-screen bg-background text-foreground overflow-hidden px-6 py-10">
+    <section className="relative w-full min-h-screen overflow-hidden bg-background px-4 py-8 text-foreground sm:px-6 md:px-6 md:py-10">
 
       {/* logo + time */}
-      <div className="absolute top-6 left-6 z-20">
+      <div className="relative z-20 mb-8 md:absolute md:left-6 md:top-6 md:mb-0">
         <p className="text-sm font-bold tracking-widest">PSYX</p>
         <p className="text-[10px] opacity-70">{date}</p>
         <p className="text-[10px] opacity-70">{time}</p>
       </div>
 
       {/* center images */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative z-10 flex justify-center md:absolute md:inset-0 md:items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col items-center"
+          className="flex w-full flex-col items-center justify-center"
         >
-          <Image
-            src="/stickers/me.png"
-            alt="profile"
-            width={500}
-            height={600}
-            priority
-            className="grayscale object-contain"
-          />
+          <div className="w-full px-4 sm:px-6 md:px-0">
+            <Image
+              src="/stickers/me.png"
+              alt="profile"
+              width={500}
+              height={600}
+              priority
+              className="mx-auto h-auto w-full max-w-[280px] object-contain sm:max-w-[340px] md:max-w-[500px]"
+            />
+          </div>
 
-          <Image
-            src="/hero.png"
-            alt="hero"
-            width={500}
-            height={300}
-            className="object-contain mt-4"
-          />
+          <div className="w-full px-4 pb-2 sm:px-6 md:px-0">
+            <Image
+              src="/hero.png"
+              alt="hero"
+              width={500}
+              height={300}
+              className="mx-auto mt-3 h-auto w-full max-w-[300px] object-contain sm:max-w-[360px] md:mt-4 md:max-w-[500px]"
+            />
+          </div>
+
+          <div className="mt-5 grid w-full max-w-sm grid-cols-2 gap-x-4 gap-y-2 px-4 text-center text-xs sm:max-w-md md:hidden">
+            <span>visual artist *</span>
+            <span>doom scroller *</span>
+            <span>music consumer *</span>
+            <span>explorer *</span>
+          </div>
         </motion.div>
       </div>
 
       {/* floating labels */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0 hidden md:block">
         <span className="absolute left-[28%] top-[40%] text-xs">visual artist *</span>
         <span className="absolute left-[35%] top-[60%] text-xs">music consumer *</span>
         <span className="absolute right-[30%] top-[40%] text-xs">doom scroller *</span>
@@ -71,7 +82,7 @@ export default function HeroSection() {
       </div>
 
       {/* subtle border frame */}
-      <div className="absolute inset-4 border border-pink-400 pointer-events-none" />
+      <div className="pointer-events-none absolute inset-3 border border-pink-400 sm:inset-4" />
 
     </section>
   )

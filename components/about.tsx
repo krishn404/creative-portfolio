@@ -151,17 +151,36 @@ export default function About() {
             </p>
           </div>
 
-          <h2
-            className={`${instrumentSerif.className} text-3xl sm:text-4xl md:text-5xl lg:text-4xl font-bold leading-tight text-foreground relative inline-block`}
-          >
-            <span className="relative">
-              I’m someone who makes visual stuff like music covers, graphics for clothing,
-              and designs for corporate social media pages. Most days I’m jumping between
-              posters, layouts, typography, and color palettes, while doing basic video
-              edits when something needs motion. Currently I’m into making chaotic, dark
-              visuals with gritty textures, bold type, and a slightly raw vibe.
-            </span>
-          </h2>
+          <section className="max-w-4xl mx-auto px-4">
+  <h1
+    className={`${instrumentSerif.className}
+    text-4xl sm:text-5xl md:text-6xl
+    font-semibold leading-tight text-foreground`}
+  >
+    I work in visuals across music, brands, and apparel.
+  </h1>
+
+  <p className="mt-6 text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl">
+    My work spans music covers, corporate visuals, and apparel including shirts,
+    tees, and bottomwear, alongside freelance projects while managing all Design
+    direction at
+    <span className="text-foreground font-medium"> The BlackBombay House</span>.
+    For major artworks and core visual direction I work primarily in
+    <span className="inline-flex items-center gap-2 mx-1 px-3 py-1 rounded-full border border-border bg-background align-middle">
+      <img src="/icons/photoshop.png" alt="Photoshop" className="w-4 h-4" />
+      <span className="text-sm font-medium text-foreground">Photoshop</span>
+    </span>
+    and for structured design needs like corporate assets, carousels, and rapid
+    layouts I rely on
+    <span className="inline-flex items-center gap-2 mx-1 px-3 py-1 rounded-full border border-border bg-background align-middle">
+      <img src="/icons/canva.png" alt="Canva" className="w-6 h-6" />
+      <span className="text-sm font-medium text-foreground">Canva</span>
+    </span>.
+    Visually, my work operates between chaos and darker aesthetics, driven by raw
+    textures and deliberate imperfection, while staying open to continuous
+    experimentation.
+  </p>
+</section>
 
 
           {/* <div className="flex flex-wrap gap-3 justify-center">

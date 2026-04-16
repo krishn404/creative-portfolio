@@ -1,22 +1,22 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import useSWR from "swr"
 import { motion, useReducedMotion } from "framer-motion"
 
-interface SpotifyStatus {
-  isPlaying: boolean
+interface TrackData {
   title: string
   artist: string
-  album: string
   albumArt: string
-  url: string
-  playedAt: number | null
-  progressMs: number | null
-  durationMs: number | null
+  durationMs?: number // Optional: total track duration in milliseconds
+  spotifyUrl?: string // Optional: link to track
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+interface StandaloneCDPlayerProps {
+  track: TrackData
+  isPlaying?: boolean // Optional: control play/pause externally
+  onPlayPause?: (playing: boolean) => void // Optional: callback for play/pause
+  autoPlay?: boolean // Optional: start playing automatically
+}
 
 function formatTime(ms: number | null): string {
   if (!ms) return "0:00"
@@ -26,73 +26,85 @@ function formatTime(ms: number | null): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`
 }
 
-export default function SpotifyGlassWidget() {
-  const { data, error } = useSWR<SpotifyStatus | null>("/api/spotify/status", fetcher, {
-    refreshInterval: 1000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-  })
-
+export default function StandaloneCDPlayer({
+  track,
+  isPlaying: externalIsPlaying,
+  onPlayPause,
+  autoPlay = false
+}: StandaloneCDPlayerProps) {
   const [mounted, setMounted] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(autoPlay)
   const [localProgress, setLocalProgress] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const shouldReduceMotion = useReducedMotion()
 
+  // Use external isPlaying if provided, otherwise use internal state
+  const currentIsPlaying = externalIsPlaying !== undefined ? externalIsPlaying : isPlaying
+  const duration = track.durationMs ?? 180000 // Default 3 minutes if not provided
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Handle play/pause
+  useEffect(() => {
+    if (externalIsPlaying !== undefined) {
+      setIsPlaying(externalIsPlaying)
+    }
+  }, [externalIsPlaying])
+
+  // Progress timer
   useEffect(() => {
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
 
-    if (data?.isPlaying && data.progressMs !== null && data.durationMs !== null) {
-      setLocalProgress(data.progressMs)
-
+    if (currentIsPlaying && duration > 0) {
       progressIntervalRef.current = setInterval(() => {
         setLocalProgress((prev) => {
           const next = prev + 1000
-          if (data.durationMs && next >= data.durationMs) return data.durationMs
+          if (next >= duration) {
+            // Auto-pause when finished
+            if (onPlayPause) {
+              onPlayPause(false)
+            } else {
+              setIsPlaying(false)
+            }
+            return duration
+          }
           return next
         })
       }, 1000)
-    } else {
-      setLocalProgress(0)
     }
 
     return () => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
     }
-  }, [data?.isPlaying, data?.progressMs, data?.durationMs])
+  }, [currentIsPlaying, duration, onPlayPause])
 
-  useEffect(() => {
-    if (data?.progressMs !== null && data?.isPlaying) {
-      setLocalProgress(data.progressMs)
+  const handlePlayPause = () => {
+    const newState = !currentIsPlaying
+    if (onPlayPause) {
+      onPlayPause(newState)
+    } else {
+      setIsPlaying(newState)
     }
-  }, [data?.progressMs, data?.isPlaying])
+  }
 
-  if (!mounted) return <SpotifyGlassSkeleton />
+  if (!mounted) return <CDPlayerSkeleton />
 
-  const hasData = !error && !!data
-  const isPlaying = data?.isPlaying ?? false
   const progress = localProgress
-  const duration = data?.durationMs ?? 0
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
 
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
-
-      <motion.a
-        href={hasData ? data!.url : "https://open.spotify.com"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group relative block"
+      <motion.div
+        className="group relative block cursor-pointer"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handlePlayPause}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         <div
           className="relative overflow-hidden"
@@ -103,12 +115,12 @@ export default function SpotifyGlassWidget() {
           }}
         >
           {/* Dynamic Background Layer */}
-          {data?.albumArt ? (
+          {track.albumArt ? (
             <>
               <div
                 className="absolute inset-0"
                 style={{
-                  backgroundImage: `url(${data.albumArt})`,
+                  backgroundImage: `url(${track.albumArt})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   filter: "blur(20px) brightness(0.4) saturate(1.2)",
@@ -174,13 +186,13 @@ export default function SpotifyGlassWidget() {
               <motion.div
                 className="relative w-full h-full"
                 animate={
-                  isPlaying && !shouldReduceMotion
+                  currentIsPlaying && !shouldReduceMotion
                     ? { rotate: 360 }
                     : { rotate: 0 }
                 }
                 transition={{
                   duration: 5,
-                  repeat: isPlaying && !shouldReduceMotion ? Infinity : 0,
+                  repeat: currentIsPlaying && !shouldReduceMotion ? Infinity : 0,
                   ease: "linear",
                 }}
                 style={{
@@ -190,7 +202,7 @@ export default function SpotifyGlassWidget() {
                 <div
                   className="relative w-full h-full rounded-full overflow-hidden"
                   style={{
-                    backgroundImage: data?.albumArt
+                    backgroundImage: track.albumArt
                       ? "none"
                       : "linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%)",
                     backgroundSize: "cover",
@@ -203,10 +215,10 @@ export default function SpotifyGlassWidget() {
                     `,
                   }}
                 >
-                  {data?.albumArt ? (
+                  {track.albumArt ? (
                     <img
-                      src={data.albumArt}
-                      alt={`${data.album} by ${data.artist}`}
+                      src={track.albumArt}
+                      alt={`${track.title} by ${track.artist}`}
                       className="absolute inset-0 w-full h-full object-cover rounded-full"
                     />
                   ) : (
@@ -219,7 +231,6 @@ export default function SpotifyGlassWidget() {
                     />
                   )}
 
-                  {/* Vinyl-like gradient overlay */}
                   <div
                     className="absolute inset-0 rounded-full"
                     style={{
@@ -228,7 +239,6 @@ export default function SpotifyGlassWidget() {
                     }}
                   />
 
-                  {/* Vinyl grooves */}
                   <div
                     className="absolute inset-0 rounded-full"
                     style={{
@@ -251,7 +261,6 @@ export default function SpotifyGlassWidget() {
                     }}
                   />
 
-                  {/* Center hole */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div
                       className="absolute rounded-full"
@@ -273,7 +282,7 @@ export default function SpotifyGlassWidget() {
                     />
                   </div>
 
-                  {!isPlaying && (
+                  {!currentIsPlaying && (
                     <div
                       className="absolute inset-0 rounded-full"
                       style={{
@@ -367,7 +376,7 @@ export default function SpotifyGlassWidget() {
                 className="text-sm font-semibold text-white mb-1 truncate px-2"
                 style={{ lineHeight: "1.3" }}
               >
-                {hasData ? data!.title : "Last played"}
+                {track.title}
               </h3>
 
               {/* Artist name - secondary */}
@@ -375,11 +384,11 @@ export default function SpotifyGlassWidget() {
                 className="text-xs text-white/70 font-light mb-3"
                 style={{ lineHeight: "1.2" }}
               >
-                {hasData ? data!.artist : "Not playing"}
+                {track.artist}
               </p>
 
               {/* Progress bar and time - fades out on hover */}
-              {hasData && duration > 0 && (
+              {duration > 0 && (
                 <motion.div
                   className="flex items-center gap-2 px-2"
                   animate={{
@@ -419,34 +428,17 @@ export default function SpotifyGlassWidget() {
                   </span>
                 </motion.div>
               )}
-
-              {!hasData && (
-                <motion.p
-                  className="text-[10px] text-white/50 mt-2"
-                  animate={{
-                    opacity: isHovered ? 0 : 1,
-                  }}
-                  transition={{
-                    duration: 0.4,
-                    ease: [0.4, 0, 0.2, 1],
-                  }}
-                >
-                  Not playing / Last played
-                </motion.p>
-              )}
             </motion.div>
           </div>
         </div>
-      </motion.a>
+      </motion.div>
     </div>
   )
 }
 
-function SpotifyGlassSkeleton() {
+function CDPlayerSkeleton() {
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
-
       <div
         className="relative overflow-hidden animate-pulse"
         style={{
@@ -479,3 +471,4 @@ function SpotifyGlassSkeleton() {
     </div>
   )
 }
+

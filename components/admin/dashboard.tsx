@@ -38,6 +38,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getDefaultContent } from "@/lib/content"
 import type { Actions } from "@/lib/actions" // Import Actions here
+import type { SharedIdea } from "@/lib/shared-ideas"
 
 const categoryOptions = ["Posters", "Thumbnails", "Graphic Clothing"] as const
 export type WorkCategory = (typeof categoryOptions)[number]
@@ -53,7 +54,7 @@ const workFormSchema = z.object({
   status: z.enum(statusOptions).optional(),
 })
 
-type TabKey = "works" | "about" | "footer"
+type TabKey = "works" | "about" | "footer" | "ideas"
 
 type Props = {
   initialContent: SiteContent
@@ -89,6 +90,11 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   const { data: worksData } = useSWR<{ works: WorkItem[] }>(authenticated ? "/api/works?all=true" : null, fetcher, {
     refreshInterval: 5000,
   })
+  const { data: ideasData } = useSWR<{ ideas: SharedIdea[] }>(
+    authenticated ? "/api/admin/shared-ideas" : null,
+    fetcher,
+    { refreshInterval: 8000 },
+  )
 
   const [content, setContent] = useState<SiteContent>(() => {
     const defaults = getDefaultContent()
@@ -144,6 +150,10 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       .filter((w) => (categoryFilter === "All" ? true : (w.category ?? "") === categoryFilter))
       .filter((w) => w.title.toLowerCase().includes(workSearch.toLowerCase()))
   }, [content.works, statusFilter, categoryFilter, workSearch])
+
+  const sharedIdeas = useMemo(() => {
+    return [...(ideasData?.ideas ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }, [ideasData?.ideas])
 
   // Hide page-level GradualBlur on admin dashboard
   useEffect(() => {
@@ -635,6 +645,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
               <TabsTrigger value="works">Works</TabsTrigger>
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="footer">Footer & Contact</TabsTrigger>
+              <TabsTrigger value="ideas">Shared Ideas</TabsTrigger>
             </TabsList>
 
             <TabsContent value="works" className="space-y-4">
@@ -855,6 +866,57 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                       }
                     />
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ideas" className="space-y-4">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Shared Ideas</CardTitle>
+                  <CardDescription>Voice/text submissions from the profile card flow.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sharedIdeas.length === 0 ? (
+                    <div className="border border-dashed rounded-lg p-10 text-center text-muted-foreground">
+                      No shared ideas yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {sharedIdeas.map((idea) => (
+                        <div key={idea.id} className="rounded-xl border bg-card p-4 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline">{new Date(idea.createdAt).toLocaleString()}</Badge>
+                            <Badge variant="secondary">{idea.sourceContext}</Badge>
+                            {idea.audioCaptured ? <Badge>Voice</Badge> : <Badge variant="outline">Text only</Badge>}
+                          </div>
+                          <p className="text-sm leading-relaxed">{idea.transcript || idea.textFallback}</p>
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            <Badge variant="outline">Type: {idea.extractedTags.projectType}</Badge>
+                            <Badge variant="outline">Urgency: {idea.extractedTags.urgency}</Badge>
+                            <Badge variant="outline">Budget: {idea.extractedTags.budgetSignal}</Badge>
+                          </div>
+                          {(idea.callSlotDate || idea.callSlotTime) && (
+                            <p className="text-xs text-muted-foreground">
+                              Preferred slot: {idea.callSlotDate || "N/A"} {idea.callSlotTime || ""}
+                            </p>
+                          )}
+                          {idea.contactDetail ? (
+                            <p className="text-xs text-muted-foreground">Contact: {idea.contactDetail}</p>
+                          ) : null}
+                          {idea.audioDataUrl ? (
+                            <div className="pt-1">
+                              <p className="text-xs text-muted-foreground mb-1">Voice note</p>
+                              <audio controls preload="none" className="w-full">
+                                <source src={idea.audioDataUrl} type="audio/webm" />
+                                Your browser does not support audio playback.
+                              </audio>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

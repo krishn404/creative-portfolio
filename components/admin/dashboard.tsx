@@ -383,59 +383,65 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     setUploadingId(work.id)
     setUploadProgress(0)
     setError(null)
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
 
-      const responseText = await new Promise<string>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open("POST", "/api/upload")
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100)
-            setUploadProgress(percent)
-          }
-        }
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(xhr.responseText)
-          } else {
-            // Try to parse error message from response
-            try {
-              const errorData = JSON.parse(xhr.responseText)
-              reject(new Error(errorData?.error || `Upload failed with status ${xhr.status}`))
-            } catch {
-              reject(new Error(xhr.responseText || `Upload failed with status ${xhr.status}`))
-            }
-          }
-        }
-        xhr.onerror = () => reject(new Error("Network error during upload"))
-        xhr.send(formData)
+    const uploadToCloudinary = async (fileToUpload: File): Promise<{
+      secure_url: string
+      public_id: string
+    }> => {
+      const sigRes = await fetch("/api/upload", { method: "POST", cache: "no-store" })
+      if (!sigRes.ok) {
+        const errorData = (await sigRes.json().catch(() => ({}))) as { error?: string }
+        throw new Error(errorData?.error || "Failed to fetch upload signature")
+      }
+
+      const signaturePayload = (await sigRes.json()) as {
+        timestamp: number | string
+        signature: string
+        apiKey: string
+        cloudName: string
+        folder: string
+      }
+
+      // Since we upload via `fetch`, we can't get true progress events.
+      setUploadProgress(10)
+
+      const cloudinaryFormData = new FormData()
+      cloudinaryFormData.append("file", fileToUpload)
+      cloudinaryFormData.append("api_key", signaturePayload.apiKey)
+      cloudinaryFormData.append("timestamp", String(signaturePayload.timestamp))
+      cloudinaryFormData.append("signature", signaturePayload.signature)
+      cloudinaryFormData.append("folder", signaturePayload.folder)
+
+      const cloudinaryRes = await fetch("https://api.cloudinary.com/v1_1/dk19wtixa/auto/upload", {
+        method: "POST",
+        body: cloudinaryFormData,
       })
 
-      let data
-      try {
-        data = JSON.parse(responseText)
-        if (!data || !data.url) {
-          // Check if there's an error message in the response
-          const errorMsg = data?.error || "Invalid response from upload API"
-          throw new Error(errorMsg)
-        }
-      } catch (parseError) {
-        console.error("Upload response parse error:", parseError)
-        // Try to extract error message from response
-        try {
-          const errorData = JSON.parse(responseText)
-          throw new Error(errorData?.error || "Invalid JSON response from server")
-        } catch {
-          throw new Error("Invalid JSON response from server")
-        }
+      const cloudinaryData = (await cloudinaryRes.json().catch(() => null)) as
+        | { secure_url?: unknown; public_id?: unknown; error?: { message?: unknown } | string }
+        | null
+
+      if (!cloudinaryRes.ok || !cloudinaryData?.secure_url || !cloudinaryData?.public_id) {
+        const errMsg =
+          (typeof cloudinaryData?.error === "string" && cloudinaryData.error) ||
+          (typeof cloudinaryData?.error?.message === "string" && cloudinaryData.error.message) ||
+          `Cloudinary upload failed with status ${cloudinaryRes.status}`
+        throw new Error(errMsg)
       }
+
+      const secure_url = cloudinaryData.secure_url as string
+      const public_id = cloudinaryData.public_id as string
+      setUploadProgress(100)
+      return { secure_url, public_id }
+    }
+
+    try {
+      const { secure_url: secureUrl, public_id: publicId } = await uploadToCloudinary(file)
 
       const existingMedia = work.media || []
       const newMediaItem = {
-        url: data.url,
-        publicId: data.publicId,
+        url: secureUrl,
+        publicId: publicId,
         type: "image" as const,
         order: existingMedia.length,
       }
@@ -445,14 +451,14 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       
       // img is always derived from media[0] (cover image)
       // Only set img if this is the first image, otherwise keep existing img or derive from media[0]
-      const coverImageUrl = updatedMedia[0]?.url || data.url
+      const coverImageUrl = updatedMedia[0]?.url || secureUrl
 
       const updated: WorkItem = {
         ...work,
         ...preservedFormData,
         img: coverImageUrl,
         // Only update publicId if this is the first image (cover)
-        publicId: existingMedia.length === 0 ? data.publicId : work.publicId,
+        publicId: existingMedia.length === 0 ? publicId : work.publicId,
         media: updatedMedia,
       }
 

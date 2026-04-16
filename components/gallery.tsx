@@ -1,20 +1,18 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
-import type { CSSProperties, WheelEvent } from "react"
+import type { CSSProperties } from "react"
 import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
-import { ArrowLeft, ArrowRight, Minus, Plus, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, X } from "lucide-react"
 import type { MediaAsset, WorkItem } from "@/lib/content"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const categories = ["All", "Posters", "Thumbnails", "Graphic Clothing"] as const
 type Category = (typeof categories)[number]
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 const getWorkMedia = (work: WorkItem): MediaAsset[] => {
   const media = work.media?.filter((asset) => asset.type === "image" && asset.url) ?? []
@@ -37,7 +35,6 @@ function ProgressiveImage({
   imageStyle,
   priority = false,
   onClick,
-  onWheel,
   draggable = false,
 }: {
   src: string
@@ -47,17 +44,31 @@ function ProgressiveImage({
   imageStyle?: CSSProperties
   priority?: boolean
   onClick?: () => void
-  onWheel?: (event: WheelEvent<HTMLDivElement>) => void
   draggable?: boolean
 }) {
   const [loaded, setLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
     setLoaded(false)
+    setHasError(false)
+
+    const img = new window.Image()
+    img.src = src
+    img.onload = () => setLoaded(true)
+    img.onerror = () => {
+      setHasError(true)
+      setLoaded(true)
+    }
+
+    return () => {
+      img.onload = null
+      img.onerror = null
+    }
   }, [src])
 
   return (
-    <div className={`relative overflow-hidden bg-muted ${className ?? ""}`} onClick={onClick} onWheel={onWheel}>
+    <div className={`relative overflow-hidden bg-muted ${className ?? ""}`} onClick={onClick}>
       <img
         src={getCloudinaryPlaceholder(src)}
         alt=""
@@ -78,11 +89,20 @@ function ProgressiveImage({
         decoding="async"
         draggable={draggable}
         onLoad={() => setLoaded(true)}
+        onError={() => {
+          setHasError(true)
+          setLoaded(true)
+        }}
         style={imageStyle}
         className={`relative h-full w-full transition duration-500 ${loaded ? "opacity-100" : "opacity-0"} ${
           imgClassName ?? "object-cover"
         }`}
       />
+      {hasError ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 px-4 text-center text-sm text-muted-foreground">
+          This image could not be loaded.
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -94,7 +114,7 @@ export default function Gallery() {
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null)
   const [activeMediaIndex, setActiveMediaIndex] = useState(0)
   const [hoveredWorkId, setHoveredWorkId] = useState<string | null>(null)
-  const [zoom, setZoom] = useState(1)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
   const scrollPositionRef = useRef(0)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -138,7 +158,7 @@ export default function Gallery() {
 
   const resetViewerState = useCallback(() => {
     setActiveMediaIndex(0)
-    setZoom(1)
+    setIsImageModalOpen(false)
   }, [])
 
   const closeModalState = useCallback(() => {
@@ -154,7 +174,6 @@ export default function Gallery() {
       scrollPositionRef.current = window.scrollY
       setSelectedWorkId(work.id)
       setActiveMediaIndex(index)
-      setZoom(1)
       window.history.pushState({ galleryModal: true, workId: work.id }, "", `#work-${work.id}`)
     },
     [],
@@ -172,7 +191,6 @@ export default function Gallery() {
     (index: number) => {
       if (!selectedMedia.length) return
       setActiveMediaIndex((index + selectedMedia.length) % selectedMedia.length)
-      setZoom(1)
     },
     [selectedMedia.length],
   )
@@ -195,6 +213,12 @@ export default function Gallery() {
     document.body.classList.add("hide-page-blur")
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isImageModalOpen && event.key === "Escape") {
+        event.preventDefault()
+        setIsImageModalOpen(false)
+        return
+      }
+
       if (event.key === "Escape") {
         event.preventDefault()
         closeWork()
@@ -210,15 +234,6 @@ export default function Gallery() {
         goToPreviousMedia()
       }
 
-      if (event.key === "+" || event.key === "=") {
-        event.preventDefault()
-        setZoom((current) => clamp(Number((current + 0.25).toFixed(2)), 1, 3))
-      }
-
-      if (event.key === "-") {
-        event.preventDefault()
-        setZoom((current) => clamp(Number((current - 0.25).toFixed(2)), 1, 3))
-      }
     }
 
     const handlePopState = () => {
@@ -234,7 +249,7 @@ export default function Gallery() {
       document.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("popstate", handlePopState)
     }
-  }, [closeModalState, closeWork, goToNextMedia, goToPreviousMedia, selectedWork])
+  }, [closeModalState, closeWork, goToNextMedia, goToPreviousMedia, isImageModalOpen, selectedWork])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -482,27 +497,9 @@ export default function Gallery() {
                       <div className="relative flex min-h-0 flex-col bg-muted/20">
                         <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-6">
                           <div className="text-sm text-muted-foreground">
-                            {selectedMedia.length > 1 ? "Use arrows, swipe, or thumbnails to navigate." : "Single artwork view."}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setZoom((current) => clamp(Number((current - 0.25).toFixed(2)), 1, 3))}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition hover:bg-muted"
-                              aria-label="Zoom out"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </button>
-                            <div className="min-w-14 text-center text-sm text-foreground">{Math.round(zoom * 100)}%</div>
-                            <button
-                              type="button"
-                              onClick={() => setZoom((current) => clamp(Number((current + 0.25).toFixed(2)), 1, 3))}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background transition hover:bg-muted"
-                              aria-label="Zoom in"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </button>
+                            {selectedMedia.length > 1
+                              ? "Use arrows, swipe, or thumbnails to navigate."
+                              : "Single artwork view."}
                           </div>
                         </div>
 
@@ -560,14 +557,8 @@ export default function Gallery() {
                                   src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
                                   alt={`${selectedWork.title} image ${activeMediaIndex + 1}`}
                                   className="flex max-h-full w-full items-center justify-center rounded-2xl"
-                                  imgClassName="mx-auto max-h-full w-auto max-w-full object-contain transition-transform duration-200"
-                                  imageStyle={{ transform: `scale(${zoom})` }}
-                                  onClick={() => setZoom((current) => (current > 1 ? 1 : 2))}
-                                  onWheel={(event) => {
-                                    event.preventDefault()
-                                    const direction = event.deltaY > 0 ? -0.2 : 0.2
-                                    setZoom((current) => clamp(Number((current + direction).toFixed(2)), 1, 3))
-                                  }}
+                                  imgClassName="mx-auto max-h-full w-auto max-w-full object-contain"
+                                  onClick={() => setIsImageModalOpen(true)}
                                 />
                               </motion.div>
                             </AnimatePresence>
@@ -577,6 +568,52 @@ export default function Gallery() {
                     </div>
                   </div>
                 </motion.div>
+
+                <AnimatePresence>
+                  {isImageModalOpen ? (
+                    <>
+                      <motion.button
+                        type="button"
+                        aria-label="Close expanded image"
+                        className="fixed inset-0 z-[130] bg-black/75"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => setIsImageModalOpen(false)}
+                      />
+
+                      <motion.div
+                        className="fixed inset-0 z-[131] flex items-center justify-center p-4 md:p-8"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div
+                          className="relative flex h-full w-full max-w-6xl items-center justify-center"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setIsImageModalOpen(false)}
+                            aria-label="Close expanded image"
+                            className="absolute right-0 top-0 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white transition hover:bg-black/60"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+
+                          <ProgressiveImage
+                            src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
+                            alt={`${selectedWork.title} expanded image ${activeMediaIndex + 1}`}
+                            className="flex h-full w-full items-center justify-center rounded-2xl"
+                            imgClassName="mx-auto max-h-full w-auto max-w-full object-contain"
+                          />
+                        </div>
+                      </motion.div>
+                    </>
+                  ) : null}
+                </AnimatePresence>
               </>
             ) : null}
           </AnimatePresence>,

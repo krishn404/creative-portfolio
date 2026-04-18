@@ -13,7 +13,7 @@ A modern, responsive portfolio website with an advanced admin dashboard for mana
 - **Confirmation Dialogs**: Prevent accidental deletions
 - **Real-time Updates**: Instant synchronization across all clients
 
-## Setup
+## Setups
 
 ### 1. Install Dependencies
 

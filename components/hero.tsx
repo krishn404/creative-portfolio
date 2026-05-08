@@ -4,6 +4,7 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import localFont from "next/font/local"
 import { Share_Tech_Mono } from "next/font/google"
+import { useEffect, useState } from "react"
 
 const handwritten = localFont({
   src: "../public/font.ttf",
@@ -16,14 +17,29 @@ const mono = Share_Tech_Mono({
 })
 
 export default function HeroSection() {
-  const now = new Date()
-  const date = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  })
-  const time = now.toLocaleTimeString()
+  const [date, setDate] = useState<string>("—")
+  const [time, setTime] = useState<string>("—")
+
+  useEffect(() => {
+    const now = new Date()
+    // Use an explicit locale + options to keep formatting deterministic.
+    // (We still only render after mount to avoid SSR/client hydration mismatch.)
+    const nextDate = new Intl.DateTimeFormat("en-GB", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(now)
+
+    const nextTime = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(now)
+
+    setDate(nextDate)
+    setTime(nextTime)
+  }, [])
 
   return (
     <section className="relative w-full min-h-screen overflow-hidden bg-background px-4 py-8 text-foreground sm:px-6 md:px-6 md:py-10">
@@ -31,7 +47,9 @@ export default function HeroSection() {
       {/* logo + time */}
       <div className="relative z-20 mb-8 md:absolute md:left-6 md:top-6 md:mb-0">
         <p className="text-sm font-bold tracking-widest">PSYX</p>
-        <p className="text-[10px] opacity-70">{date}</p>
+        <p className="text-[10px] opacity-70" aria-live="polite">
+          {date}
+        </p>
         <p className="text-[10px] opacity-70">{time}</p>
       </div>
 

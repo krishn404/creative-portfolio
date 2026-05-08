@@ -34,6 +34,7 @@ export default function SpotifyGlassWidget() {
   })
 
   const [mounted, setMounted] = useState(false)
+  const [isCompact, setIsCompact] = useState(false)
   const [localProgress, setLocalProgress] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -41,6 +42,9 @@ export default function SpotifyGlassWidget() {
 
   useEffect(() => {
     setMounted(true)
+    // Touch devices generally don't trigger hover, so the default "idle" disc position
+    // must be less negative on small screens to avoid clipping.
+    setIsCompact(window.matchMedia?.("(max-width: 640px)")?.matches ?? false)
   }, [])
 
   useEffect(() => {
@@ -79,8 +83,13 @@ export default function SpotifyGlassWidget() {
   const duration = data?.durationMs ?? 0
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
 
+  const cardSize = isCompact ? "min(220px, 78vw)" : "240px"
+  const cdSize = isCompact ? "min(160px, 58vw)" : "180px"
+  const cdTopIdle = isCompact ? "-60px" : "-90px"
+  const cdTopHover = isCompact ? "20px" : "30px"
+
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex w-full flex-col items-center">
       <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
 
       <motion.a
@@ -97,8 +106,8 @@ export default function SpotifyGlassWidget() {
         <div
           className="relative overflow-hidden"
           style={{
-            width: "240px",
-            height: "240px",
+            width: cardSize,
+            height: cardSize,
             borderRadius: "32px",
           }}
         >
@@ -160,11 +169,11 @@ export default function SpotifyGlassWidget() {
             <motion.div
               className="absolute left-1/2 -translate-x-1/2"
               style={{
-                width: "180px",
-                height: "180px",
+              width: cdSize,
+              height: cdSize,
               }}
               animate={{
-                top: isHovered ? "30px" : "-90px",
+              top: isHovered ? cdTopHover : cdTopIdle,
               }}
               transition={{
                 duration: 0.6,
@@ -444,14 +453,14 @@ export default function SpotifyGlassWidget() {
 
 function SpotifyGlassSkeleton() {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex w-full flex-col items-center">
       <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
 
       <div
         className="relative overflow-hidden animate-pulse"
         style={{
-          width: "240px",
-          height: "240px",
+          width: "min(220px, 78vw)",
+          height: "min(220px, 78vw)",
           borderRadius: "32px",
         }}
       >

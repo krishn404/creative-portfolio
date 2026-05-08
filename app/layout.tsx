@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import GradualBlur from "@/components/GradualBlur"
+import { buildMetadata } from "@/lib/seo/metadata"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -10,9 +11,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 const _instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: ["400"] })
 
 export const metadata: Metadata = {
-  title: "Krishna Kant | Portfolio",
-  description:
-    "A minimal, animated portfolio by Krishna Kant showcasing visual design, poster art, and creative projects.",
+  ...buildMetadata(),
   icons: {
     icon: "/favicon.ico",
   },

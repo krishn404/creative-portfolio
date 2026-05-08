@@ -45,6 +45,9 @@ export default function About() {
   
   // Get 4 random poster images
   const posterImages = useMemo(() => {
+    // Avoid Math.random() during SSR / first client render (hydration mismatch risk).
+    if (!hydrated) return []
+
     if (!data?.works || data.works.length === 0) {
       if (process.env.NODE_ENV === "development") {
         console.log("About: No works data available", { data, isLoading })
@@ -89,7 +92,7 @@ export default function About() {
     }
     
     return images
-  }, [data, isLoading])
+  }, [data, isLoading, hydrated])
 
   useEffect(() => setHydrated(true), [])
 

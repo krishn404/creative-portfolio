@@ -28,7 +28,7 @@ function formatTime(ms: number | null): string {
 
 export default function SpotifyGlassWidget() {
   const { data, error } = useSWR<SpotifyStatus | null>("/api/spotify/status", fetcher, {
-    refreshInterval: 1000,
+    refreshInterval: 15000,
     revalidateOnFocus: true,
     revalidateOnReconnect: true,
   })
@@ -77,7 +77,7 @@ export default function SpotifyGlassWidget() {
 
   if (!mounted) return <SpotifyGlassSkeleton />
 
-  const hasData = !error && !!data
+  const hasData = !error && !!data && !!data.title
   const isPlaying = data?.isPlaying ?? false
   const progress = localProgress
   const duration = data?.durationMs ?? 0

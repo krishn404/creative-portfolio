@@ -28,6 +28,24 @@ interface SpotifyNowPlayingResponse {
   timestamp: number
 }
 
+interface SpotifyPlayerResponse {
+  is_playing: boolean
+  progress_ms: number
+  item: {
+    name: string
+    duration_ms: number
+    artists: Array<{ name: string }>
+    album: {
+      name: string
+      images: Array<{ url: string; height: number; width: number }>
+    }
+    external_urls: {
+      spotify: string
+    }
+  } | null
+  timestamp: number
+}
+
 interface SpotifyRecentlyPlayedResponse {
   items: Array<{
     track: {
@@ -127,6 +145,31 @@ export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
       }
     }
 
+    // Some accounts/contexts are more reliable through /me/player.
+    const playerResponse = await fetch("https://api.spotify.com/v1/me/player", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+
+    if (playerResponse.ok) {
+      const data: SpotifyPlayerResponse = await playerResponse.json()
+
+      if (data.item) {
+        return {
+          isPlaying: data.is_playing,
+          title: data.item.name,
+          artist: data.item.artists.map((a) => a.name).join(", "),
+          album: data.item.album.name,
+          albumArt: data.item.album.images[0]?.url || "",
+          url: data.item.external_urls.spotify,
+          playedAt: data.timestamp,
+          progressMs: data.progress_ms || null,
+          durationMs: data.item.duration_ms || null,
+        }
+      }
+    }
+
     // If currently playing fails, try recently played
     return await getLastPlayed(accessToken)
   } catch (error) {
@@ -147,6 +190,7 @@ async function getLastPlayed(accessToken: string): Promise<SpotifyStatus | null>
     })
 
     if (!response.ok) {
+      console.error("Failed to fetch recently played track:", response.status, await response.text())
       return null
     }
 

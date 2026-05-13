@@ -1,4 +1,8 @@
-export const SITE_URL = "https://art.krixnx.xyz"
+/** Public hostname only (for robots Host directive and URL building). */
+export const SITE_HOST = "art.krixnx.xyz"
+
+/** Canonical site origin; always HTTPS, no trailing slash. */
+export const SITE_URL = `https://${SITE_HOST}`
 export const SITE_NAME = "kantcancook Portfolio"
 export const CREATOR_NAME = "kantcancook"
 export const CREATOR_ALIASES = ["kantcancook", "psyx"] as const

@@ -9,6 +9,7 @@
  */
 
 import type * as content from "../content.js";
+import type * as posts from "../posts.js";
 import type * as works from "../works.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   content: typeof content;
+  posts: typeof posts;
   works: typeof works;
 }>;
 

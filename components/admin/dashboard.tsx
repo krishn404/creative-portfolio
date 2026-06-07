@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit } from "lucide-react"
+import Link from "next/link"
+import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit, PenLine } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getDefaultContent } from "@/lib/content"
@@ -613,6 +614,12 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
               <p className="text-sm text-muted-foreground">Manage works, about copy, and footer links in one place.</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" asChild>
+                <Link href="/admin/blog">
+                  <PenLine className="mr-2 h-4 w-4" />
+                  Blog
+                </Link>
+              </Button>
               <ThemeToggle />
               <Button variant="outline" onClick={refreshContent}>
                 Refresh

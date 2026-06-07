@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import localFont from "next/font/local"
 import { Share_Tech_Mono } from "next/font/google"
@@ -46,11 +47,22 @@ export default function HeroSection() {
 
       {/* logo + time */}
       <div className="relative z-20 mb-8 md:absolute md:left-6 md:top-6 md:mb-0">
-        <p className="text-sm font-bold tracking-widest">PSYX</p>
+        <Link href="/" className="text-sm font-bold tracking-widest hover:opacity-70">
+          PSYX
+        </Link>
         <p className="text-[10px] opacity-70" aria-live="polite">
           {date}
         </p>
         <p className="text-[10px] opacity-70">{time}</p>
+      </div>
+
+      <div className="relative z-20 mb-8 text-right md:absolute md:right-6 md:top-6 md:mb-0">
+        <Link
+          href="/blog"
+          className={`${mono.className} text-[10px] uppercase tracking-[0.2em] opacity-80 transition-opacity hover:opacity-100`}
+        >
+          Writing →
+        </Link>
       </div>
 
       {/* center images */}

@@ -59,4 +59,19 @@ export default defineSchema({
     .index("by_work_id", ["id"])
     .index("by_status", ["status"])
     .index("by_created", ["created_at"]),
+
+  posts: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    excerpt: v.string(),
+    content: v.string(),
+    coverImage: v.optional(v.string()),
+    tags: v.array(v.string()),
+    published: v.boolean(),
+    publishedAt: v.optional(v.number()),
+    readTime: v.optional(v.string()),
+    views: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_published", ["published"]),
 })

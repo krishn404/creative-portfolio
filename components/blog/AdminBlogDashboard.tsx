@@ -9,7 +9,7 @@ import { AdminPostRow } from "./AdminPostRow"
 type AdminBlogDashboardProps = {
   initialPosts: BlogPost[]
   onDelete: (id: string) => Promise<void>
-  onTogglePublish: (id: string) => Promise<void>
+  onTogglePublish: (id: string) => Promise<unknown>
 }
 
 export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish }: AdminBlogDashboardProps) {

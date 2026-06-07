@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const links = [
-  { href: "/", label: "HOME" },
+  { href: "/#writing", label: "HOME" },
   { href: "/blog", label: "WRITING" },
 ]
 
@@ -12,7 +12,7 @@ export function BlogHeader() {
   const pathname = usePathname()
 
   return (
-    <header className="relative z-10 border-b border-black bg-[var(--surface)]">
+    <header className="sticky top-0 z-40 border-b border-black bg-[var(--surface)]">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
         <Link
           href="/"
@@ -23,9 +23,8 @@ export function BlogHeader() {
         <nav className="flex items-center gap-6">
           {links.map((link) => {
             const active =
-              link.href === "/blog"
-                ? pathname === "/blog" || pathname.startsWith("/blog/")
-                : pathname === link.href
+              link.href === "/blog" &&
+              (pathname === "/blog" || pathname.startsWith("/blog/"))
             return (
               <Link
                 key={link.href}

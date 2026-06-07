@@ -19,8 +19,9 @@ export function TagFilter({ tags, activeTag, onTagChange }: TagFilterProps) {
           <button
             key={tag}
             type="button"
+            aria-pressed={isActive}
             onClick={() => onTagChange(tag === "all" ? null : tag)}
-            className={`border border-black px-3 py-1 text-[10px] tracking-wider transition-colors ${
+            className={`border border-black px-3 py-1 text-[10px] tracking-wider transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
               isActive
                 ? "blog-font-headline bg-black font-medium text-white"
                 : "blog-font-mono bg-[var(--surface)] text-[var(--text-primary)] hover:bg-black hover:text-white"

@@ -1,163 +1,334 @@
 "use client"
 
-import { useMemo } from "react"
-import type { JSONContent } from "novel"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { EditorContent, useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Placeholder from "@tiptap/extension-placeholder"
+import TiptapLink from "@tiptap/extension-link"
+import TiptapImage from "@tiptap/extension-image"
+import TiptapUnderline from "@tiptap/extension-underline"
+import Highlight from "@tiptap/extension-highlight"
+import TaskList from "@tiptap/extension-task-list"
+import TaskItem from "@tiptap/extension-task-item"
+import Table from "@tiptap/extension-table"
+import TableRow from "@tiptap/extension-table-row"
+import TableCell from "@tiptap/extension-table-cell"
+import TableHeader from "@tiptap/extension-table-header"
+import { marked } from "marked"
 import {
-  EditorRoot,
-  EditorContent,
-  EditorCommand,
-  EditorCommandEmpty,
-  EditorCommandItem,
-  EditorCommandList,
-  StarterKit,
-  Placeholder,
-  HorizontalRule,
-  TiptapLink,
-  TaskList,
-  TaskItem,
-  UpdatedImage,
-  HighlightExtension,
-  createSuggestionItems,
-  renderItems,
-  Command,
-  handleCommandNavigation,
-} from "novel"
-import { Heading1, Heading2, Heading3, List, ListOrdered, Text, Minus } from "lucide-react"
+  Bold,
+  Code,
+  Eye,
+  Heading1,
+  Heading2,
+  ImageIcon,
+  Italic,
+  LinkIcon,
+  List,
+  ListOrdered,
+  Moon,
+  Quote,
+  Redo2,
+  Save,
+  Sun,
+  Table2,
+  Underline,
+  Undo2,
+} from "lucide-react"
+import { isLikelyImageUrl, uploadFileToCloudinary } from "@/lib/cloudinary-upload"
 
-const suggestionItems = createSuggestionItems([
-  {
-    title: "Text",
-    description: "Plain paragraph",
-    searchTerms: ["p", "paragraph"],
-    icon: <Text size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).toggleNode("paragraph", "paragraph").run()
-    },
-  },
-  {
-    title: "Heading 1",
-    description: "Large section heading",
-    searchTerms: ["title", "big", "large"],
-    icon: <Heading1 size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run()
-    },
-  },
-  {
-    title: "Heading 2",
-    description: "Medium section heading",
-    searchTerms: ["subtitle", "medium"],
-    icon: <Heading2 size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run()
-    },
-  },
-  {
-    title: "Heading 3",
-    description: "Small section heading",
-    searchTerms: ["subtitle", "small"],
-    icon: <Heading3 size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run()
-    },
-  },
-  {
-    title: "Bullet List",
-    description: "Unordered list",
-    searchTerms: ["unordered", "point"],
-    icon: <List size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).toggleBulletList().run()
-    },
-  },
-  {
-    title: "Numbered List",
-    description: "Ordered list",
-    searchTerms: ["ordered"],
-    icon: <ListOrdered size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).toggleOrderedList().run()
-    },
-  },
-  {
-    title: "Divider",
-    description: "Horizontal rule",
-    searchTerms: ["horizontal", "rule", "hr"],
-    icon: <Minus size={16} />,
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setHorizontalRule().run()
-    },
-  },
-])
+const AUTOSAVE_KEY = "blog-editor-autosave"
 
-const extensions = [
-  StarterKit.configure({ horizontalRule: false }),
-  Placeholder.configure({ placeholder: "Start writing, or press '/' for commands..." }),
-  HorizontalRule,
-  TiptapLink.configure({ openOnClick: false }),
-  TaskList,
-  TaskItem,
-  UpdatedImage,
-  HighlightExtension,
-  Command.configure({
-    suggestion: {
-      items: () => suggestionItems,
-      render: renderItems,
-    },
-  }),
-]
-
-export function NovelEditor({
-  content,
-  onChange,
-}: {
+type NovelEditorProps = {
   content?: string
   onChange: (val: string) => void
+}
+
+function isMarkdownLike(text: string) {
+  const trimmed = text.trim()
+  if (!trimmed || trimmed.length < 3) return false
+  return /(^|\n)(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|\|.+\||!\[[^\]]*\]\(|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|_[^_]+_)/.test(trimmed)
+}
+
+function getInitialContent(content?: string) {
+  if (!content) return undefined
+  try {
+    return JSON.parse(content)
+  } catch {
+    return content
+  }
+}
+
+function ToolbarButton({
+  label,
+  active = false,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  label: string
+  active?: boolean
+  disabled?: boolean
+  onClick: () => void
+  children: React.ReactNode
 }) {
-  const initialContent = useMemo<JSONContent | undefined>(() => {
-    if (!content) return undefined
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center border border-black transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        active ? "bg-black text-white" : "bg-[var(--surface)] hover:bg-black hover:text-white"
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function htmlFromMarkdown(text: string) {
+  return marked.parse(text, {
+    async: false,
+    breaks: true,
+    gfm: true,
+  }) as string
+}
+
+export function NovelEditor({ content, onChange }: NovelEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [savedAt, setSavedAt] = useState<Date | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const extensions = useMemo(
+    () => [
+      StarterKit.configure({
+        horizontalRule: {},
+        codeBlock: {
+          HTMLAttributes: {
+            class: "blog-editor-codeblock",
+          },
+        },
+      }),
+      Placeholder.configure({
+        placeholder: "Start writing, paste AI markdown, or drop an image...",
+      }),
+      TiptapLink.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          rel: "noopener noreferrer nofollow",
+          target: "_blank",
+        },
+      }),
+      TiptapImage.configure({
+        allowBase64: false,
+        HTMLAttributes: {
+          class: "blog-editor-image",
+        },
+      }),
+      TiptapUnderline,
+      Highlight.configure({ multicolor: true }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+    ],
+    [],
+  )
+
+  const editor = useEditor({
+    extensions,
+    content: getInitialContent(content),
+    editorProps: {
+      attributes: {
+        class: "blog-editor-prose ProseMirror",
+      },
+      handlePaste: (_view, event) => {
+        const html = event.clipboardData?.getData("text/html")
+        const text = event.clipboardData?.getData("text/plain")
+
+        if (text && isLikelyImageUrl(text)) {
+          event.preventDefault()
+          editor?.chain().focus().setImage({ src: text.trim() }).run()
+          return true
+        }
+
+        if (!html && text && isMarkdownLike(text)) {
+          event.preventDefault()
+          editor?.chain().focus().insertContent(htmlFromMarkdown(text)).run()
+          return true
+        }
+
+        return false
+      },
+      handleDrop: (_view, event, _slice, moved) => {
+        if (moved) return false
+        const files = Array.from(event.dataTransfer?.files ?? []).filter((file) =>
+          file.type.startsWith("image/"),
+        )
+        if (!files.length) return false
+
+        event.preventDefault()
+        void uploadImages(files, editor ?? undefined)
+        return true
+      },
+    },
+    onUpdate: ({ editor }) => {
+      const next = JSON.stringify(editor.getJSON())
+      onChange(next)
+      window.localStorage.setItem(AUTOSAVE_KEY, next)
+      setSavedAt(new Date())
+    },
+  })
+
+  const uploadImages = useCallback(async (files: File[], targetEditor = editor) => {
+    if (!targetEditor) return
+    setIsUploading(true)
     try {
-      return JSON.parse(content) as JSONContent
-    } catch {
-      return undefined
+      for (const file of files) {
+        const { secureUrl } = await uploadFileToCloudinary(file)
+        targetEditor.chain().focus().setImage({ src: secureUrl }).run()
+      }
+    } finally {
+      setIsUploading(false)
     }
-  }, [content])
+  }, [editor])
+
+  useEffect(() => {
+    if (!editor || content) return
+    const draft = window.localStorage.getItem(AUTOSAVE_KEY)
+    if (!draft) return
+    try {
+      editor.commands.setContent(JSON.parse(draft), false)
+      setSavedAt(new Date())
+    } catch {
+      window.localStorage.removeItem(AUTOSAVE_KEY)
+    }
+  }, [content, editor])
+
+  const pickImage = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleFilePicked = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files ?? [])
+      event.target.value = ""
+      await uploadImages(files)
+    },
+    [uploadImages],
+  )
+
+  const setLink = useCallback(() => {
+    if (!editor) return
+    const previousUrl = editor.getAttributes("link").href as string | undefined
+    const url = window.prompt("Paste a link", previousUrl ?? "https://")
+    if (url === null) return
+    if (!url.trim()) {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run()
+      return
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run()
+  }, [editor])
+
+  if (!editor) {
+    return (
+      <div className="blog-editor-shell border border-black bg-[var(--surface)] p-6">
+        <p className="blog-font-mono text-xs text-[var(--text-secondary)]">Loading editor...</p>
+      </div>
+    )
+  }
+
+  const previewHtml = editor.getHTML()
 
   return (
-    <EditorRoot>
-      <EditorContent
-        initialContent={initialContent}
-        extensions={extensions}
-        className="blog-novel-editor border border-black bg-[var(--surface)] p-6 font-[family-name:var(--font-dm-sans)] min-h-[400px]"
-        editorProps={{
-          handleDOMEvents: {
-            keydown: (_view, event) => handleCommandNavigation(event),
-          },
-        }}
-        onUpdate={({ editor }) => onChange(JSON.stringify(editor.getJSON()))}
-      >
-        <EditorCommand className="z-50 border border-black bg-[var(--surface)]">
-          <EditorCommandEmpty className="blog-font-mono px-3 py-2 text-xs">
-            No results
-          </EditorCommandEmpty>
-          <EditorCommandList>
-            {suggestionItems.map((item) => (
-              <EditorCommandItem
-                key={item.title}
-                value={item.title}
-                onCommand={(val) => item.command?.(val)}
-                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-black hover:text-white"
-              >
-                {item.icon}
-                <div>
-                  <p className="font-medium">{item.title}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{item.description}</p>
-                </div>
-              </EditorCommandItem>
-            ))}
-          </EditorCommandList>
-        </EditorCommand>
-      </EditorContent>
-    </EditorRoot>
+    <div className={`blog-editor-shell border border-black ${darkMode ? "is-dark" : ""}`}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFilePicked}
+      />
+
+      <div className="blog-editor-toolbar sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-black bg-[var(--surface)] p-2">
+        <ToolbarButton label="Undo" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
+          <Undo2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Redo" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>
+          <Redo2 className="h-4 w-4" />
+        </ToolbarButton>
+        <span className="mx-1 h-6 border-l border-black" />
+        <ToolbarButton label="Heading 1" active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
+          <Heading1 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Heading 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+          <Heading2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+          <Bold className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+          <Italic className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Underline" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+          <Underline className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Link" active={editor.isActive("link")} onClick={setLink}>
+          <LinkIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Bullet list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
+          <List className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Numbered list" active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+          <ListOrdered className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Blockquote" active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+          <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Code block" active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+          <Code className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Insert table" onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+          <Table2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Upload image" disabled={isUploading} onClick={pickImage}>
+          <ImageIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <span className="mx-1 h-6 border-l border-black" />
+        <ToolbarButton label="Preview" active={preview} onClick={() => setPreview((value) => !value)}>
+          <Eye className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Dark mode" active={darkMode} onClick={() => setDarkMode((value) => !value)}>
+          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </ToolbarButton>
+        <div className="ml-auto flex min-h-9 items-center gap-2 px-2 text-[10px] text-[var(--text-secondary)]">
+          <Save className="h-3.5 w-3.5" />
+          <span className="blog-font-mono">
+            {isUploading ? "UPLOADING..." : savedAt ? `AUTOSAVED ${savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "AUTOSAVE READY"}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid min-h-[520px] lg:grid-cols-[minmax(0,1fr)]">
+        {preview ? (
+          <div
+            className="blog-editor-preview blog-prose prose max-w-none p-4 sm:p-8"
+            dangerouslySetInnerHTML={{ __html: previewHtml }}
+          />
+        ) : (
+          <EditorContent editor={editor} className="min-h-[520px] p-4 sm:p-8" />
+        )}
+      </div>
+    </div>
   )
 }

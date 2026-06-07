@@ -58,8 +58,8 @@ export default function HeroSection() {
 
       <div className="relative z-20 mb-8 text-right md:absolute md:right-6 md:top-6 md:mb-0">
         <Link
-          href="/blog"
-          className={`${mono.className} text-[10px] uppercase tracking-[0.2em] opacity-80 transition-opacity hover:opacity-100`}
+          href="/#writing"
+          className={`${mono.className} landing-writing-nav inline-flex min-h-10 items-center justify-end px-1 text-[10px] uppercase tracking-[0.2em] opacity-80 transition-opacity hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
         >
           Writing →
         </Link>

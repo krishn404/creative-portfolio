@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react"
 import Link from "next/link"
 import { NovelEditor } from "./NovelEditor"
+import { CoverImageUpload } from "./CoverImageUpload"
 import { computeReadTime, parseTagsInput, slugify } from "@/lib/blog/utils"
 import type { BlogPost } from "@/lib/blog/utils"
 
@@ -65,7 +66,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           slug: slug.trim(),
           excerpt: excerpt.trim() || title.trim(),
           content,
-          coverImage: coverImage.trim() || undefined,
+          coverImage: coverImage || undefined,
           tags,
           published: shouldPublish,
           readTime,
@@ -78,7 +79,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
   }
 
   return (
-    <div className="relative z-10 pb-24">
+    <div className="relative z-10 pb-32">
       <div className="mb-8 flex items-center justify-between border-b border-black pb-4">
         <Link
           href="/admin/blog"
@@ -98,42 +99,53 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
         />
 
         <div>
-          <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
+          <label htmlFor="post-slug" className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
             SLUG
           </label>
+          <p id="post-slug-help" className="mb-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+            The clean URL path of the article used for SEO and routing, for example /blog/renaissance-review.
+          </p>
           <input
+            id="post-slug"
             type="text"
             value={slug}
+            aria-describedby="post-slug-help"
             onChange={(e) => {
               setSlugTouched(true)
               setSlug(e.target.value)
             }}
-            className="blog-font-mono w-full border border-black bg-[var(--surface)] px-3 py-2 text-sm outline-none"
+            className="blog-font-mono w-full border border-black bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
           />
         </div>
 
         <div>
-          <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
+          <label htmlFor="post-excerpt" className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
             EXCERPT
           </label>
+          <p id="post-excerpt-help" className="mb-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+            The short summary used in blog previews, cards, search results, and social sharing metadata.
+          </p>
           <textarea
+            id="post-excerpt"
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
+            aria-describedby="post-excerpt-help"
             rows={2}
-            className="blog-font-body w-full resize-none border border-black bg-[var(--surface)] px-3 py-2 text-base outline-none"
+            className="blog-font-body w-full resize-none border border-black bg-[var(--surface)] px-3 py-2 text-base outline-none focus:ring-1 focus:ring-black"
           />
         </div>
 
         <div>
-          <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
+          <label htmlFor="post-tags" className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
             TAGS (COMMA-SEPARATED)
           </label>
           <input
+            id="post-tags"
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="design, dev, music"
-            className="blog-font-mono w-full border border-black bg-[var(--surface)] px-3 py-2 text-sm outline-none"
+            className="blog-font-mono w-full border border-black bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black"
           />
           {tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -146,18 +158,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           )}
         </div>
 
-        <div>
-          <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
-            COVER IMAGE URL
-          </label>
-          <input
-            type="url"
-            value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            placeholder="https://..."
-            className="blog-font-mono w-full border border-black bg-[var(--surface)] px-3 py-2 text-sm outline-none"
-          />
-        </div>
+        <CoverImageUpload value={coverImage || undefined} onChange={(url) => setCoverImage(url ?? "")} />
 
         <div>
           <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
@@ -167,12 +168,14 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
         </div>
 
         {error && (
-          <p className="blog-font-mono text-xs text-red-600">// {error}</p>
+          <p className="blog-font-mono text-xs text-red-600" role="alert">
+            // {error}
+          </p>
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-black bg-[var(--surface)]">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-black bg-[var(--surface)] pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span className="blog-font-mono text-xs tracking-wider">
             {published ? (
               <>
@@ -182,12 +185,12 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
               "// DRAFT"
             )}
           </span>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={isPending}
               onClick={() => handleSave(false)}
-              className="blog-font-headline border border-black bg-[var(--surface)] px-4 py-2 text-sm font-medium hover:bg-black hover:text-white disabled:opacity-50"
+              className="blog-font-headline min-h-10 flex-1 border border-black bg-[var(--surface)] px-4 py-2 text-sm font-medium hover:bg-black hover:text-white disabled:opacity-50 sm:flex-none"
             >
               SAVE DRAFT
             </button>
@@ -195,7 +198,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
               type="button"
               disabled={isPending}
               onClick={() => handleSave(true)}
-              className="blog-font-headline border border-black bg-black px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-neon)] hover:text-black disabled:opacity-50"
+              className="blog-font-headline min-h-10 flex-1 border border-black bg-black px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-neon)] hover:text-black disabled:opacity-50 sm:flex-none"
             >
               {isPending ? "SAVING..." : "PUBLISH"}
             </button>

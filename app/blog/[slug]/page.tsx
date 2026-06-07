@@ -77,7 +77,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
         <Link
           href="/blog"
-          className="blog-font-mono text-xs tracking-wider hover:underline"
+          className="blog-font-mono inline-flex min-h-10 items-center text-xs tracking-wider hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
         >
           ← WRITING
         </Link>

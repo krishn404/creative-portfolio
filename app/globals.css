@@ -305,6 +305,29 @@ body.hide-page-blur .gradual-blur-page {
   box-shadow: 3px 3px 0px #000;
 }
 
+.landing-writing-nav,
+.blog-writing-link {
+  position: relative;
+  z-index: 30;
+  transform: translateZ(0);
+}
+
+.blog-writing-link {
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+
+.blog-writing-link::before {
+  content: "";
+  position: absolute;
+  inset: -10px -8px;
+}
+
+.blog-writing-link:hover,
+.blog-writing-link:focus-visible {
+  opacity: 0.9;
+}
+
 .blog-novel-editor .ProseMirror {
   min-height: 360px;
   outline: none;
@@ -316,4 +339,170 @@ body.hide-page-blur .gradual-blur-page {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+.blog-novel-editor .ProseMirror img {
+  border: 1px solid #000;
+  border-radius: 0;
+  max-width: 100%;
+  height: auto;
+}
+
+.blog-novel-editor .ProseMirror:focus {
+  outline: none;
+}
+
+.blog-editor-shell {
+  --editor-bg: var(--surface);
+  --editor-fg: var(--text-primary);
+  --editor-muted: var(--text-secondary);
+  background: var(--editor-bg);
+  color: var(--editor-fg);
+}
+
+.blog-editor-shell.is-dark {
+  --editor-bg: #0d0d0d;
+  --editor-fg: #f5f5f0;
+  --editor-muted: #b7b7ad;
+  --surface: #0d0d0d;
+  --text-primary: #f5f5f0;
+  --text-secondary: #b7b7ad;
+}
+
+.blog-editor-shell.is-dark .blog-editor-toolbar,
+.blog-editor-shell.is-dark button {
+  border-color: #f5f5f0;
+}
+
+.blog-editor-shell.is-dark button {
+  background: #0d0d0d;
+  color: #f5f5f0;
+}
+
+.blog-editor-shell.is-dark button:hover,
+.blog-editor-shell.is-dark button[aria-pressed="true"] {
+  background: #f5f5f0;
+  color: #0d0d0d;
+}
+
+.blog-editor-prose {
+  min-height: 480px;
+  outline: none;
+  color: var(--editor-fg);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.blog-editor-prose > * + *,
+.blog-editor-preview > * + * {
+  margin-top: 1em;
+}
+
+.blog-editor-prose p.is-editor-empty:first-child::before {
+  color: var(--editor-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.blog-editor-prose h1,
+.blog-editor-prose h2,
+.blog-editor-prose h3,
+.blog-editor-preview h1,
+.blog-editor-preview h2,
+.blog-editor-preview h3 {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.blog-editor-prose h1,
+.blog-editor-preview h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.blog-editor-prose h2,
+.blog-editor-preview h2 {
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.blog-editor-prose blockquote,
+.blog-editor-preview blockquote {
+  border-left: 3px solid var(--accent-neon);
+  padding-left: 1rem;
+  color: var(--editor-muted);
+}
+
+.blog-editor-prose ul,
+.blog-editor-prose ol,
+.blog-editor-preview ul,
+.blog-editor-preview ol {
+  padding-left: 1.5rem;
+}
+
+.blog-editor-prose ul,
+.blog-editor-preview ul {
+  list-style: disc;
+}
+
+.blog-editor-prose ol,
+.blog-editor-preview ol {
+  list-style: decimal;
+}
+
+.blog-editor-prose code,
+.blog-editor-preview code {
+  background: color-mix(in srgb, var(--editor-fg) 10%, transparent);
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.blog-editor-prose pre,
+.blog-editor-preview pre {
+  overflow-x: auto;
+  border: 1px solid currentColor;
+  background: #0a0a0a;
+  color: #f5f5f0;
+  padding: 1rem;
+}
+
+.blog-editor-prose img,
+.blog-editor-preview img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid currentColor;
+}
+
+.blog-editor-prose table,
+.blog-editor-preview table,
+.blog-prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.blog-editor-prose th,
+.blog-editor-prose td,
+.blog-editor-preview th,
+.blog-editor-preview td,
+.blog-prose th,
+.blog-prose td {
+  border: 1px solid currentColor;
+  padding: 0.6rem;
+  vertical-align: top;
+}
+
+.blog-editor-prose th,
+.blog-editor-preview th,
+.blog-prose th {
+  background: color-mix(in srgb, var(--editor-fg, #000) 8%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  text-transform: uppercase;
+}
+
+.blog-editor-prose .selectedCell {
+  background: color-mix(in srgb, var(--accent-neon) 30%, transparent);
 }

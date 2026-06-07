@@ -17,7 +17,8 @@ export function PostCard({ post, index }: PostCardProps) {
   return (
     <motion.article
       initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
       transition={
         shouldReduceMotion
           ? { duration: 0 }
@@ -26,13 +27,13 @@ export function PostCard({ post, index }: PostCardProps) {
     >
       <Link
         href={`/blog/${post.slug}`}
-        className="group block border border-black bg-[var(--surface)] p-5 sm:p-6 blog-card-hover transition-shadow"
+        className="group block border border-black bg-[var(--surface)] p-5 sm:p-6 blog-card-hover transition-shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
         <div className="flex gap-4 sm:gap-6">
           <span className="blog-font-mono shrink-0 text-xs text-[var(--text-secondary)]">{number}</span>
           <div className="min-w-0 flex-1">
-            <h2 className="blog-font-headline text-xl font-medium sm:text-2xl">{post.title}</h2>
-            <p className="blog-font-body mt-2 text-base text-[var(--text-secondary)] line-clamp-2">
+            <h3 className="blog-font-headline text-xl font-medium sm:text-2xl">{post.title}</h3>
+            <p className="blog-font-body mt-2 line-clamp-2 text-base text-[var(--text-secondary)]">
               {post.excerpt}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">

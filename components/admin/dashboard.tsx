@@ -104,7 +104,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       ...initialContent,
       about: { ...defaults.about, ...initialContent?.about },
       contact: { ...defaults.contact, ...initialContent?.contact },
-      footer: { ...defaults.footer, ...initialContent?.footer },
+      footer: { note: initialContent?.footer?.note ?? defaults.footer?.note ?? "" },
     }
   })
 
@@ -124,7 +124,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
         setNewWorkFormData({
           title: newWork.title,
           year: newWork.year || "",
-          category: newWork.category,
+          category: newWork.category || "Posters",
           status: newWork.status || "draft",
         })
 
@@ -155,14 +155,6 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   const sharedIdeas = useMemo(() => {
     return [...(ideasData?.ideas ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }, [ideasData?.ideas])
-
-  // Hide page-level GradualBlur on admin dashboard
-  useEffect(() => {
-    document.body.classList.add("hide-admin-blur")
-    return () => {
-      document.body.classList.remove("hide-admin-blur")
-    }
-  }, [])
 
   useEffect(() => {
     const checkSession = async () => {
@@ -242,7 +234,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       title: work.title,
       img: work.img,
       year: work.year,
-      category: work.category,
+      category: work.category || "Posters",
       status: work.status,
     })
     if (!parsed.success) {
@@ -425,7 +417,9 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       if (!cloudinaryRes.ok || !cloudinaryData?.secure_url || !cloudinaryData?.public_id) {
         const errMsg =
           (typeof cloudinaryData?.error === "string" && cloudinaryData.error) ||
-          (typeof cloudinaryData?.error?.message === "string" && cloudinaryData.error.message) ||
+          (typeof cloudinaryData?.error === "object" &&
+            typeof cloudinaryData.error?.message === "string" &&
+            cloudinaryData.error.message) ||
           `Cloudinary upload failed with status ${cloudinaryRes.status}`
         throw new Error(errMsg)
       }

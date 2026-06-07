@@ -3,6 +3,7 @@
 import Hero from '@/components/hero'
 import Gallery from '@/components/gallery'
 import About from '@/components/about'
+import BlogSection from '@/components/blog/BlogSection'
 import Contact from '@/components/contact'
 import Stickers from '@/components/stickers'
 
@@ -13,6 +14,7 @@ export default function Home() {
       <Hero />
       <About />
       <Gallery />
+      <BlogSection />
       <Contact />
     </main>
   )

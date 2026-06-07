@@ -109,25 +109,14 @@ export default function Contact() {
           >
             <div className="relative">
               <ProfileCard
-                name={
-                  <span className="text-pink-300">
-                    Krishna Kant Maharshi
-                  </span>
-                }
-                title={
-                  <span className="text-pink-100">Visual Artist</span>
-                }
+                name="Krishna Kant Maharshi"
+                title="Visual Artist"
                 portfolioText={profileInfo.portfolioText}
                 portfolioLink={profileInfo.portfolioLink}
                 statusText={profileInfo.statusText}
                 Icon1={profileInfo.Icon1}
                 Icon2={profileInfo.Icon2}
-                PrimaryBtnText={
-                  <span className="text-white">Share idea</span>
-                }
-                SecondaryBtnText={
-                  <span className="text-white">Book your call</span>
-                }
+                SecondaryBtnText="Book your call"
                 subText={profileInfo.subText}
                 Icon3={profileInfo.subIcon}
                 sourceContext="contact-page-profile-card"

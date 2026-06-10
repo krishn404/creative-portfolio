@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone"
 import { z } from "zod"
 import useSWR, { mutate } from "swr"
 import type { SiteContent, WorkItem } from "@/lib/content"
+import { uploadFileToCloudinary } from "@/lib/cloudinary-upload"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -377,61 +378,10 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     setUploadProgress(0)
     setError(null)
 
-    const uploadToCloudinary = async (fileToUpload: File): Promise<{
-      secure_url: string
-      public_id: string
-    }> => {
-      const sigRes = await fetch("/api/upload", { method: "POST", cache: "no-store" })
-      if (!sigRes.ok) {
-        const errorData = (await sigRes.json().catch(() => ({}))) as { error?: string }
-        throw new Error(errorData?.error || "Failed to fetch upload signature")
-      }
-
-      const signaturePayload = (await sigRes.json()) as {
-        timestamp: number | string
-        signature: string
-        apiKey: string
-        cloudName: string
-        folder: string
-      }
-
-      // Since we upload via `fetch`, we can't get true progress events.
-      setUploadProgress(10)
-
-      const cloudinaryFormData = new FormData()
-      cloudinaryFormData.append("file", fileToUpload)
-      cloudinaryFormData.append("api_key", signaturePayload.apiKey)
-      cloudinaryFormData.append("timestamp", String(signaturePayload.timestamp))
-      cloudinaryFormData.append("signature", signaturePayload.signature)
-      cloudinaryFormData.append("folder", signaturePayload.folder)
-
-      const cloudinaryRes = await fetch("https://api.cloudinary.com/v1_1/dk19wtixa/auto/upload", {
-        method: "POST",
-        body: cloudinaryFormData,
-      })
-
-      const cloudinaryData = (await cloudinaryRes.json().catch(() => null)) as
-        | { secure_url?: unknown; public_id?: unknown; error?: { message?: unknown } | string }
-        | null
-
-      if (!cloudinaryRes.ok || !cloudinaryData?.secure_url || !cloudinaryData?.public_id) {
-        const errMsg =
-          (typeof cloudinaryData?.error === "string" && cloudinaryData.error) ||
-          (typeof cloudinaryData?.error === "object" &&
-            typeof cloudinaryData.error?.message === "string" &&
-            cloudinaryData.error.message) ||
-          `Cloudinary upload failed with status ${cloudinaryRes.status}`
-        throw new Error(errMsg)
-      }
-
-      const secure_url = cloudinaryData.secure_url as string
-      const public_id = cloudinaryData.public_id as string
-      setUploadProgress(100)
-      return { secure_url, public_id }
-    }
-
     try {
-      const { secure_url: secureUrl, public_id: publicId } = await uploadToCloudinary(file)
+      setUploadProgress(10)
+      const { secureUrl, publicId } = await uploadFileToCloudinary(file)
+      setUploadProgress(100)
 
       const existingMedia = work.media || []
       const newMediaItem = {

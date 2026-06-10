@@ -27,7 +27,7 @@ export function PostCard({ post, index }: PostCardProps) {
     >
       <Link
         href={`/blog/${post.slug}`}
-        className="group block border border-black bg-[var(--surface)] p-5 sm:p-6 blog-card-hover transition-shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+        className="group block border border-black bg-[var(--surface)] p-5 sm:p-6 blog-card-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
         <div className="flex gap-4 sm:gap-6">
           <span className="blog-font-mono shrink-0 text-xs text-[var(--text-secondary)]">{number}</span>

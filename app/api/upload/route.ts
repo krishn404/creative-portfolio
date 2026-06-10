@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { v2 as cloudinary } from "cloudinary"
 import { isAuthenticated } from "@/lib/auth"
 
+// Cloudinary SDK requires Node.js — keep off the Edge runtime (Vercel default is Node for App Router).
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 // Configure Cloudinary once (module scope) using environment variables.
 const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -29,8 +33,10 @@ export async function POST(request: NextRequest) {
   }
 
   const timestamp = Math.round(Date.now() / 1000)
+  // Cap stored dimensions so cover uploads cannot blow up browser memory on preview.
+  const transformation = "c_limit,w_2400,f_auto,q_auto"
   const signature = cloudinary.utils.api_sign_request(
-    { timestamp, folder },
+    { timestamp, folder, transformation },
     cloudinaryConfig.api_secret as string,
   )
 
@@ -40,5 +46,6 @@ export async function POST(request: NextRequest) {
     apiKey: cloudinaryConfig.api_key as string,
     cloudName: cloudinaryConfig.cloud_name as string,
     folder,
+    transformation,
   })
 }

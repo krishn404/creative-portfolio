@@ -1,10 +1,13 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import Image from "next/image"
 import { useDropzone } from "react-dropzone"
 import { ImageIcon, X } from "lucide-react"
-import { uploadFileToCloudinary } from "@/lib/cloudinary-upload"
+import {
+  getCoverPreviewUrl,
+  MAX_UPLOAD_BYTES,
+  uploadFileToCloudinary,
+} from "@/lib/cloudinary-upload"
 
 type CoverImageUploadProps = {
   value?: string
@@ -38,9 +41,17 @@ export function CoverImageUpload({ value, onChange }: CoverImageUploadProps) {
     onDrop,
     accept: { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif"] },
     maxFiles: 1,
+    maxSize: MAX_UPLOAD_BYTES,
     disabled: uploading,
     noKeyboard: true,
-    onDropRejected: () => setError("Only image files are supported"),
+    onDropRejected: (rejections) => {
+      const code = rejections[0]?.errors[0]?.code
+      if (code === "file-too-large") {
+        setError(`Image must be under ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`)
+        return
+      }
+      setError("Only image files are supported")
+    },
   })
 
   return (
@@ -52,8 +63,14 @@ export function CoverImageUpload({ value, onChange }: CoverImageUploadProps) {
 
       {value ? (
         <div className="relative border border-black bg-[var(--surface)]">
-          <div className="relative aspect-[16/9] w-full">
-            <Image src={value} alt="Cover preview" fill className="object-cover" sizes="(max-width: 768px) 100vw, 768px" />
+          <div className="relative aspect-[16/9] w-full overflow-hidden">
+            <img
+              src={getCoverPreviewUrl(value)}
+              alt="Cover preview"
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
           <div className="flex border-t border-black">
             <button
@@ -87,7 +104,7 @@ export function CoverImageUpload({ value, onChange }: CoverImageUploadProps) {
             {uploading ? "Uploading..." : isDragActive ? "Drop image here" : "Drop or click to upload"}
           </p>
           <p className="blog-font-mono mt-1 text-[9px] tracking-wider text-[var(--text-secondary)]">
-            PNG, JPG, WEBP — no URL paste
+            PNG, JPG, WEBP — max {MAX_UPLOAD_BYTES / (1024 * 1024)}MB
           </p>
         </div>
       )}

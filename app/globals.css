@@ -301,8 +301,15 @@ body.hide-page-blur .gradual-blur-page {
   border: 1px solid #000;
 }
 
-.blog-card-hover:hover {
-  box-shadow: 3px 3px 0px #000;
+.blog-card-hover {
+  box-shadow: 3px 3px 0 #000;
+  transition: transform 150ms ease;
+  will-change: transform;
+}
+
+.blog-card-hover:hover,
+.blog-card-hover:focus-visible {
+  transform: translate(-3px, -3px);
 }
 
 .landing-writing-nav,

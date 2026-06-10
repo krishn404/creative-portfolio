@@ -17,7 +17,7 @@ export function BlogListing({
 }: BlogListingProps) {
   const title = (
     <TitleTag className="blog-font-headline glitch text-5xl font-semibold sm:text-7xl md:text-8xl lg:text-[96px]">
-      WRITING.
+      Off the Record.
     </TitleTag>
   )
 

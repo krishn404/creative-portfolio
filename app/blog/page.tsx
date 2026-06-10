@@ -6,8 +6,8 @@ import { BlogListing } from "@/components/blog/BlogListing"
 import type { BlogPost } from "@/lib/blog/utils"
 
 export const metadata: Metadata = buildMetadata({
-  title: "Writing | kantcancook",
-  description: "Essays on design, development, music, and creative process by kantcancook.",
+  title: "Off the Record | kantcancook",
+  description: "Essays on design, music, and creative process by kantcancook.",
   path: "/blog",
 })
 

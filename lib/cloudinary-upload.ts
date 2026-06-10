@@ -1,5 +1,33 @@
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+export function assertUploadableFile(file: File): void {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are supported")
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(`Image must be under ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`)
+  }
+}
+
+/** Apply a Cloudinary fetch transform for lighter browser previews. */
+export function getCloudinaryTransformedUrl(url: string, transform: string): string {
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+    return url
+  }
+  if (url.includes(`/upload/${transform}/`)) {
+    return url
+  }
+  return url.replace("/upload/", `/upload/${transform}/`)
+}
+
+export function getCoverPreviewUrl(url: string): string {
+  return getCloudinaryTransformedUrl(url, "f_auto,q_auto,w_1200,c_limit")
+}
+
 export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: string; publicId: string }> {
-  const sigRes = await fetch("/api/upload", { method: "POST", cache: "no-store" })
+  assertUploadableFile(file)
+
+  const sigRes = await fetch("/api/upload", { method: "POST", cache: "no-store", credentials: "include" })
   if (!sigRes.ok) {
     const errorData = (await sigRes.json().catch(() => ({}))) as { error?: string }
     throw new Error(errorData?.error || "Failed to fetch upload signature")
@@ -11,6 +39,7 @@ export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: s
     apiKey: string
     cloudName: string
     folder: string
+    transformation?: string
   }
 
   const cloudinaryFormData = new FormData()
@@ -19,6 +48,9 @@ export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: s
   cloudinaryFormData.append("timestamp", String(signaturePayload.timestamp))
   cloudinaryFormData.append("signature", signaturePayload.signature)
   cloudinaryFormData.append("folder", signaturePayload.folder)
+  if (signaturePayload.transformation) {
+    cloudinaryFormData.append("transformation", signaturePayload.transformation)
+  }
 
   const cloudinaryRes = await fetch(
     `https://api.cloudinary.com/v1_1/${signaturePayload.cloudName}/auto/upload`,

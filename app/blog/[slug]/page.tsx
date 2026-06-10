@@ -6,6 +6,7 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { SITE_URL } from "@/lib/seo/constants"
 import { renderPostContent } from "@/lib/blog/render-content"
+import { getCoverPreviewUrl } from "@/lib/cloudinary-upload"
 import { PostMeta } from "@/components/blog/PostMeta"
 import { ReadingProgress } from "@/components/blog/ReadingProgress"
 import { IncrementViews } from "@/components/blog/IncrementViews"
@@ -79,7 +80,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           href="/blog"
           className="blog-font-mono inline-flex min-h-10 items-center text-xs tracking-wider hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
         >
-          ← WRITING
+          ← Off the Record
         </Link>
         <hr className="my-6 border-black" />
 
@@ -101,7 +102,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         {post.coverImage && (
           <div className="relative mb-10 aspect-[16/9] w-full border border-black">
             <Image
-              src={post.coverImage}
+              src={getCoverPreviewUrl(post.coverImage)}
               alt={post.title}
               fill
               className="object-cover"

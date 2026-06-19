@@ -36,6 +36,7 @@ import {
   Undo2,
 } from "lucide-react"
 import { isLikelyImageUrl, uploadFileToCloudinary } from "@/lib/cloudinary-upload"
+import { SocialLink } from "@/lib/blog/social-link-extension"
 
 const AUTOSAVE_KEY = "blog-editor-autosave"
 
@@ -140,6 +141,7 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
       TableRow,
       TableHeader,
       TableCell,
+      SocialLink,
     ],
     [],
   )
@@ -239,6 +241,24 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run()
   }, [editor])
 
+  const insertSocialLink = useCallback(
+    (type: "spotify" | "instagram") => {
+      if (!editor) return
+      const label = window.prompt(
+        type === "spotify" ? "Link label (e.g. Listen On Spotify)" : "Link label (e.g. View Post)",
+        type === "spotify" ? "Listen On Spotify" : "View Post",
+      )
+      if (!label?.trim()) return
+      const href = window.prompt(
+        type === "spotify" ? "Spotify URL" : "Instagram URL",
+        type === "spotify" ? "https://open.spotify.com/" : "https://instagram.com/",
+      )
+      if (!href?.trim()) return
+      editor.chain().focus().setSocialLink({ type, label: label.trim(), href: href.trim() }).run()
+    },
+    [editor],
+  )
+
   if (!editor) {
     return (
       <div className="blog-editor-shell border border-black bg-[var(--surface)] p-6">
@@ -285,6 +305,12 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
         </ToolbarButton>
         <ToolbarButton label="Link" active={editor.isActive("link")} onClick={setLink}>
           <LinkIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Spotify link" onClick={() => insertSocialLink("spotify")}>
+          <img src="/icons/spotify.svg" alt="" aria-hidden="true" className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton label="Instagram link" onClick={() => insertSocialLink("instagram")}>
+          <img src="/icons/instagram.svg" alt="" aria-hidden="true" className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Bullet list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="h-4 w-4" />

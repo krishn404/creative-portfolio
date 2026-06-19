@@ -5,7 +5,8 @@ import { useDropzone } from "react-dropzone"
 import { z } from "zod"
 import useSWR, { mutate } from "swr"
 import type { SiteContent, WorkItem } from "@/lib/content"
-import { uploadFileToCloudinary } from "@/lib/cloudinary-upload"
+import { uploadFileToCloudinary, MAX_UPLOAD_BYTES } from "@/lib/cloudinary-upload"
+import { RICH_TEXT_SYNTAX_HELP } from "@/lib/rich-text"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -117,7 +118,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
 
   const modalDropzone = useDropzone({
     accept: { "image/*": [] },
-    multiple: true, // Changed from false to allow multiple file selection
+    multiple: true,
+    maxSize: MAX_UPLOAD_BYTES,
     disabled: uploadingId === newWork?.id,
     onDrop: async (accepted) => {
       if (accepted.length > 0 && newWork) {
@@ -687,6 +689,15 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                   <CardDescription>Edit the about section content displayed on your portfolio</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">Inline links in text</p>
+                    <p>Use this syntax inside paragraphs to add links with icons:</p>
+                    <ul className="list-disc pl-4 space-y-0.5 font-mono">
+                      {RICH_TEXT_SYNTAX_HELP.map((example) => (
+                        <li key={example}>{example}</li>
+                      ))}
+                    </ul>
+                  </div>
                   <div className="grid gap-2">
                     <label className="text-sm font-medium">Headline</label>
                     <Input
@@ -745,6 +756,10 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                   <CardDescription>Manage contact information and social links</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+                    <p className="font-medium text-foreground">Inline links in CTA</p>
+                    <p>Same syntax works here: {RICH_TEXT_SYNTAX_HELP[0]}</p>
+                  </div>
                   <div className="grid gap-2">
                     <label className="text-sm font-medium">Call to Action</label>
                     <Textarea
@@ -1045,7 +1060,9 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">Drop or click to upload</p>
-                    <p className="text-xs text-muted-foreground">Images save automatically</p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, WEBP — max {MAX_UPLOAD_BYTES / (1024 * 1024)}MB — uploads go directly to Cloudinary
+                    </p>
                   </div>
                 </div>
                 {uploadingId === newWork?.id && (

@@ -1,4 +1,4 @@
-export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
 export function assertUploadableFile(file: File): void {
   if (!file.type.startsWith("image/")) {

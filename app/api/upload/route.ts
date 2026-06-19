@@ -32,14 +32,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Upload service configuration error" }, { status: 500 })
   }
 
-  const purpose = request.nextUrl.searchParams.get("purpose")
   const timestamp = Math.round(Date.now() / 1000)
-  const transformation =
-    purpose === "cover"
-      ? "c_fill,w_1200,h_675,f_auto,q_auto"
-      : "c_limit,w_2400,f_auto,q_auto"
   const signature = cloudinary.utils.api_sign_request(
-    { timestamp, folder, transformation },
+    { timestamp, folder },
     cloudinaryConfig.api_secret as string,
   )
 
@@ -49,6 +44,5 @@ export async function POST(request: NextRequest) {
     apiKey: cloudinaryConfig.api_key as string,
     cloudName: cloudinaryConfig.cloud_name as string,
     folder,
-    transformation,
   })
 }

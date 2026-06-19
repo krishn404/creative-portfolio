@@ -273,6 +273,32 @@ body.hide-page-blur .gradual-blur-page {
   text-underline-offset: 3px;
 }
 
+.blog-prose a.social-link,
+.blog-editor-prose a.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9em;
+  vertical-align: middle;
+}
+
+.blog-prose a.social-link:hover,
+.blog-editor-prose a.social-link:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.blog-prose .social-link-icon,
+.blog-editor-prose .social-link-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .blog-prose code {
   font-family: var(--font-mono);
   background: #0a0a0a;

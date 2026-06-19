@@ -4,8 +4,10 @@ import { useRef, useEffect, useState, useMemo } from "react"
 import { motion, useScroll, useTransform, useSpring } from "framer-motion"
 import { Instrument_Serif } from "next/font/google"
 import useSWR from "swr"
-import type { WorkItem } from "@/lib/content"
+import type { WorkItem, SiteContent } from "@/lib/content"
+import { getDefaultContent } from "@/lib/content"
 import SpotifyGlassWidget from "@/components/spotify-glass-widget"
+import { RichText } from "@/components/RichText"
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -39,6 +41,13 @@ const POS = [
 export default function About() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [hydrated, setHydrated] = useState(false)
+
+  const { data: contentData } = useSWR<SiteContent>("/api/content", fetcher)
+  const defaults = getDefaultContent()
+  const headline = contentData?.about?.headline ?? defaults.about.headline
+  const paragraphs = contentData?.about?.paragraphs?.length
+    ? contentData.about.paragraphs
+    : defaults.about.paragraphs
 
   // Fetch works from API
   const { data, isLoading } = useSWR<{ works: WorkItem[] }>("/api/works", fetcher)
@@ -155,35 +164,23 @@ export default function About() {
           </div>
 
           <section className="max-w-4xl mx-auto px-4">
-  <h1
-    className={`${instrumentSerif.className}
+            <h1
+              className={`${instrumentSerif.className}
     text-4xl sm:text-5xl md:text-6xl
     font-semibold leading-tight text-foreground`}
-  >
-    I work in visuals across music, brands, and apparel.
-  </h1>
+            >
+              {headline}
+            </h1>
 
-  <p className="mt-6 text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl">
-    My work spans music covers, corporate visuals, and apparel including shirts,
-    tees, and bottomwear, alongside freelance projects while managing all Design
-    direction at
-    <span className="text-foreground font-medium"> The BlackBombay House</span>.
-    For major artworks and core visual direction I work primarily in
-    <span className="inline-flex items-center gap-2 mx-1 px-3 py-1 rounded-full border border-border bg-background align-middle">
-      <img src="/icons/photoshop.png" alt="Photoshop" className="w-4 h-4" />
-      <span className="text-sm font-medium text-foreground">Photoshop</span>
-    </span>
-    and for structured design needs like corporate assets, carousels, and rapid
-    layouts I rely on
-    <span className="inline-flex items-center gap-2 mx-1 px-3 py-1 rounded-full border border-border bg-background align-middle">
-      <img src="/icons/canva.png" alt="Canva" className="w-6 h-6" />
-      <span className="text-sm font-medium text-foreground">Canva</span>
-    </span>.
-    Visually, my work operates between chaos and darker aesthetics, driven by raw
-    textures and deliberate imperfection, while staying open to continuous
-    experimentation.
-  </p>
-</section>
+            {paragraphs.map((paragraph, index) => (
+              <RichText
+                key={index}
+                as="p"
+                text={paragraph}
+                className={`${index === 0 ? "mt-6" : "mt-4"} text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl`}
+              />
+            ))}
+          </section>
 
 
           {/* <div className="flex flex-wrap gap-3 justify-center">

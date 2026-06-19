@@ -12,11 +12,14 @@ import TableCell from "@tiptap/extension-table-cell"
 import TableHeader from "@tiptap/extension-table-header"
 import sanitizeHtml from "sanitize-html"
 
+import { SocialLink } from "@/lib/blog/social-link-extension"
+
 const extensions = [
   StarterKit.configure({ horizontalRule: {} }),
   TiptapLink.configure({ openOnClick: false }),
   TiptapUnderline,
   TiptapImage,
+  SocialLink,
   TaskList,
   TaskItem,
   Highlight.configure({ multicolor: true }),
@@ -44,7 +47,7 @@ export function renderPostContent(contentJson: string): string {
       ]),
       allowedAttributes: {
         ...sanitizeHtml.defaults.allowedAttributes,
-        a: ["href", "name", "target", "rel"],
+        a: ["href", "name", "target", "rel", "class", "data-social-link", "data-type", "data-label"],
         img: ["src", "alt", "title", "width", "height", "loading"],
         th: ["colspan", "rowspan"],
         td: ["colspan", "rowspan"],

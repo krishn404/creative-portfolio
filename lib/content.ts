@@ -36,11 +36,9 @@ export type SiteContent = {
 
 export const getDefaultContent = (): SiteContent => ({
   about: {
-    headline: "Building stories through design and creativity",
+    headline: "I work in visuals across music, brands, and apparel.",
     paragraphs: [
-      "I am the Creative Head at The Blackbombay House, a music production company where I manage and create visual work across different areas like social media, branding, video editing, and storytelling.",
-      "My work includes graphic design, writing copy and scripts, basic video editing, and leading creative campaigns that connect with people. I enjoy shaping ideas into visuals that tell clear and engaging stories.",
-      "Open for freelance, collaboration, and creative roles in design, content, and media.",
+      "My work spans music covers, corporate visuals, and apparel including shirts, tees, and bottomwear, alongside freelance projects while managing all Design direction at The BlackBombay House. For major artworks and core visual direction I work primarily in [[tool|Photoshop|photoshop]] and for structured design needs like corporate assets, carousels, and rapid layouts I rely on [[tool|Canva|canva]]. Visually, my work operates between chaos and darker aesthetics, driven by raw textures and deliberate imperfection, while staying open to continuous experimentation.",
     ],
     tags: ["Creative Direction", "Graphic Design", "Video Editing", "Copywriting", "Social Media Creatives"],
   },

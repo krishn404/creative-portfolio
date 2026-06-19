@@ -5,6 +5,7 @@ import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
 import type { SiteContent } from "@/lib/content"
 import ProfileCard from "@/components/profilecard"
+import { RichText } from "@/components/RichText"
 import { ChefHat, PhoneCall, PlusCircle } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -97,9 +98,11 @@ export default function Contact() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-4 md:mb-6">
               Let's create together
             </h2>
-            <p className="text-sm sm:text-base md:text-lg font-light text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              {cta}
-            </p>
+            <RichText
+              as="p"
+              text={cta}
+              className="text-sm sm:text-base md:text-lg font-light text-muted-foreground leading-relaxed max-w-2xl mx-auto"
+            />
           </motion.div>
 
           {/* Profile Card */}

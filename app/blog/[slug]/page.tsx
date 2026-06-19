@@ -6,6 +6,7 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { SITE_URL } from "@/lib/seo/constants"
 import { renderPostContent } from "@/lib/blog/render-content"
+import { BlogPostContent } from "@/components/blog/BlogPostContent"
 import { getCoverOgUrl, getCoverPreviewUrl } from "@/lib/cloudinary-upload"
 import { PostMeta } from "@/components/blog/PostMeta"
 import { ReadingProgress } from "@/components/blog/ReadingProgress"
@@ -112,10 +113,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
         )}
 
-        <div
-          className="blog-prose prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <BlogPostContent html={html} className="blog-prose prose max-w-none" />
 
         <hr className="my-10 border-black" />
 

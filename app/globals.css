@@ -294,9 +294,18 @@ body.hide-page-blur .gradual-blur-page {
 
 .blog-prose .social-link-icon,
 .blog-editor-prose .social-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
+}
+
+.blog-prose .social-link-icon svg,
+.blog-editor-prose .social-link-icon svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .blog-prose code {

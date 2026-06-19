@@ -1,4 +1,7 @@
+"use client"
+
 import { parseRichText } from "@/lib/rich-text"
+import { SocialIcon } from "@/components/SocialIcon"
 
 type RichTextProps = {
   text: string
@@ -14,13 +17,11 @@ const TOOL_ICONS = {
 function InlineLink({
   href,
   label,
-  iconSrc,
-  iconClassName = "w-4 h-4",
+  icon,
 }: {
   href: string
   label: string
-  iconSrc?: string
-  iconClassName?: string
+  icon?: "spotify" | "instagram"
 }) {
   return (
     <a
@@ -29,9 +30,7 @@ function InlineLink({
       rel="noopener noreferrer"
       className="inline-flex items-center gap-1.5 mx-0.5 px-2.5 py-0.5 rounded-full border border-border bg-background align-middle text-foreground font-medium hover:bg-muted/60 transition-colors"
     >
-      {iconSrc ? (
-        <img src={iconSrc} alt="" aria-hidden="true" className={`${iconClassName} shrink-0`} />
-      ) : null}
+      {icon ? <SocialIcon type={icon} className="h-4 w-4 shrink-0" /> : null}
       <span className="text-sm">{label}</span>
     </a>
   )
@@ -59,25 +58,13 @@ export function RichText({ text, className, as: Tag = "span" }: RichTextProps) {
 
         if (token.type === "spotify") {
           return (
-            <InlineLink
-              key={index}
-              href={token.href}
-              label={token.label}
-              iconSrc="/icons/spotify.svg"
-              iconClassName="w-4 h-4"
-            />
+            <InlineLink key={index} href={token.href} label={token.label} icon="spotify" />
           )
         }
 
         if (token.type === "instagram") {
           return (
-            <InlineLink
-              key={index}
-              href={token.href}
-              label={token.label}
-              iconSrc="/icons/instagram.svg"
-              iconClassName="w-4 h-4"
-            />
+            <InlineLink key={index} href={token.href} label={token.label} icon="instagram" />
           )
         }
 

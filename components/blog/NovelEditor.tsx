@@ -37,6 +37,8 @@ import {
 } from "lucide-react"
 import { isLikelyImageUrl, uploadFileToCloudinary } from "@/lib/cloudinary-upload"
 import { SocialLink } from "@/lib/blog/social-link-extension"
+import { SocialIcon } from "@/components/SocialIcon"
+import { BlogPostContent } from "@/components/blog/BlogPostContent"
 
 const AUTOSAVE_KEY = "blog-editor-autosave"
 
@@ -307,10 +309,10 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
           <LinkIcon className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Spotify link" onClick={() => insertSocialLink("spotify")}>
-          <img src="/icons/spotify.svg" alt="" aria-hidden="true" className="h-4 w-4" />
+          <SocialIcon type="spotify" className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Instagram link" onClick={() => insertSocialLink("instagram")}>
-          <img src="/icons/instagram.svg" alt="" aria-hidden="true" className="h-4 w-4" />
+          <SocialIcon type="instagram" className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton label="Bullet list" active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()}>
           <List className="h-4 w-4" />
@@ -347,9 +349,9 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
 
       <div className="grid min-h-[520px] lg:grid-cols-[minmax(0,1fr)]">
         {preview ? (
-          <div
+          <BlogPostContent
+            html={previewHtml}
             className="blog-editor-preview blog-prose prose max-w-none p-4 sm:p-8"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         ) : (
           <EditorContent editor={editor} className="min-h-[520px] p-4 sm:p-8" />

@@ -11,12 +11,6 @@ declare module "@tiptap/core" {
   }
 }
 
-const ICONS: Record<SocialLinkType, string | undefined> = {
-  spotify: "/icons/spotify.svg",
-  instagram: "/icons/instagram.svg",
-  link: undefined,
-}
-
 export const SocialLink = Node.create({
   name: "socialLink",
   group: "inline",
@@ -49,17 +43,15 @@ export const SocialLink = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     const type = (HTMLAttributes.type ?? "link") as SocialLinkType
-    const icon = ICONS[type]
     const children: Array<[string, Record<string, string>, ...unknown[]]> = []
 
-    if (icon) {
+    if (type === "spotify" || type === "instagram") {
       children.push([
-        "img",
+        "span",
         mergeAttributes({
-          src: icon,
-          alt: "",
-          "aria-hidden": "true",
           class: "social-link-icon",
+          "data-social-icon": type,
+          "aria-hidden": "true",
         }),
       ])
     }

@@ -49,6 +49,7 @@ export function renderPostContent(contentJson: string): string {
         ...sanitizeHtml.defaults.allowedAttributes,
         a: ["href", "name", "target", "rel", "class", "data-social-link", "data-type", "data-label"],
         img: ["src", "alt", "title", "width", "height", "loading"],
+        span: ["class", "data-social-icon", "aria-hidden"],
         th: ["colspan", "rowspan"],
         td: ["colspan", "rowspan"],
       },

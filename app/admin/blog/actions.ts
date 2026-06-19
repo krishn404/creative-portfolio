@@ -64,6 +64,15 @@ export async function deletePostAction(id: string) {
   revalidatePath("/admin/blog")
 }
 
+export async function resetAllPostViewsAction() {
+  await assertAdminSession()
+  const secret = process.env.BLOG_VIEW_SECRET || process.env.ADMIN_SESSION_TOKEN || "dev-blog-view-secret"
+  const result = await convex.mutation(api.posts.resetAllPostViews, { secret })
+  revalidatePath("/blog")
+  revalidatePath("/admin/blog")
+  return result
+}
+
 export async function togglePublishPostAction(id: string) {
   await assertAdminSession()
   const result = await convex.mutation(api.posts.togglePublish, { id: id as Id<"posts"> })

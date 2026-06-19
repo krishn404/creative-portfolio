@@ -56,18 +56,82 @@ export const getPostBySlug = query({
   },
 })
 
-export const incrementPostViews = mutation({
-  args: { slug: v.string() },
+const VIEW_DEDUP_WINDOW_MS = 24 * 60 * 60 * 1000
+
+function getViewSecret() {
+  return process.env.BLOG_VIEW_SECRET || process.env.ADMIN_SESSION_TOKEN || "dev-blog-view-secret"
+}
+
+export const recordPostView = mutation({
+  args: {
+    slug: v.string(),
+    visitorKey: v.string(),
+    secret: v.string(),
+  },
   handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) {
+      return { counted: false, views: null }
+    }
+
+    if (!args.visitorKey || args.visitorKey.length < 16) {
+      return { counted: false, views: null }
+    }
+
     const post = await ctx.db
       .query("posts")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first()
 
-    if (!post || !post.published) return null
+    if (!post || !post.published) {
+      return { counted: false, views: null }
+    }
 
-    await ctx.db.patch(post._id, { views: post.views + 1 })
-    return { views: post.views + 1 }
+    const now = Date.now()
+    const existing = await ctx.db
+      .query("postViewRecords")
+      .withIndex("by_post_visitor", (q) =>
+        q.eq("postId", post._id).eq("visitorKey", args.visitorKey),
+      )
+      .first()
+
+    if (existing && now - existing.lastViewedAt < VIEW_DEDUP_WINDOW_MS) {
+      return { counted: false, views: post.views }
+    }
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { lastViewedAt: now })
+    } else {
+      await ctx.db.insert("postViewRecords", {
+        postId: post._id,
+        visitorKey: args.visitorKey,
+        lastViewedAt: now,
+      })
+    }
+
+    const nextViews = post.views + 1
+    await ctx.db.patch(post._id, { views: nextViews })
+    return { counted: true, views: nextViews }
+  },
+})
+
+export const resetAllPostViews = mutation({
+  args: { secret: v.string() },
+  handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) {
+      throw new Error("Unauthorized")
+    }
+
+    const posts = await ctx.db.query("posts").collect()
+    for (const post of posts) {
+      await ctx.db.patch(post._id, { views: 0 })
+    }
+
+    const records = await ctx.db.query("postViewRecords").collect()
+    for (const record of records) {
+      await ctx.db.delete(record._id)
+    }
+
+    return { resetPosts: posts.length, clearedRecords: records.length }
   },
 })
 

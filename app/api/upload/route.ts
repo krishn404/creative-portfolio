@@ -32,9 +32,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Upload service configuration error" }, { status: 500 })
   }
 
+  const purpose = request.nextUrl.searchParams.get("purpose")
   const timestamp = Math.round(Date.now() / 1000)
-  // Cap stored dimensions so cover uploads cannot blow up browser memory on preview.
-  const transformation = "c_limit,w_2400,f_auto,q_auto"
+  const transformation =
+    purpose === "cover"
+      ? "c_fill,w_1200,h_675,f_auto,q_auto"
+      : "c_limit,w_2400,f_auto,q_auto"
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder, transformation },
     cloudinaryConfig.api_secret as string,

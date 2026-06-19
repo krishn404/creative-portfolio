@@ -74,4 +74,12 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"])
     .index("by_published", ["published"]),
+
+  postViewRecords: defineTable({
+    postId: v.id("posts"),
+    visitorKey: v.string(),
+    lastViewedAt: v.number(),
+  })
+    .index("by_post_visitor", ["postId", "visitorKey"])
+    .index("by_post", ["postId"]),
 })

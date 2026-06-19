@@ -20,14 +20,36 @@ export function getCloudinaryTransformedUrl(url: string, transform: string): str
   return url.replace("/upload/", `/upload/${transform}/`)
 }
 
-export function getCoverPreviewUrl(url: string): string {
-  return getCloudinaryTransformedUrl(url, "f_auto,q_auto,w_1200,c_limit")
+const COVER_DISPLAY_TRANSFORM = "f_auto,q_auto,w_1200,h_675,c_fill"
+const COVER_OG_TRANSFORM = "f_auto,q_auto,w_1200,h_630,c_fill"
+
+export function getCoverPreviewUrl(
+  url: string,
+  options?: { width?: number; height?: number },
+): string {
+  if (options?.width || options?.height) {
+    const width = options.width ?? 1200
+    const height = options.height ?? Math.round(width / (16 / 9))
+    return getCloudinaryTransformedUrl(url, `f_auto,q_auto,w_${width},h_${height},c_fill`)
+  }
+  return getCloudinaryTransformedUrl(url, COVER_DISPLAY_TRANSFORM)
 }
 
-export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: string; publicId: string }> {
+export function getCoverOgUrl(url: string): string {
+  return getCloudinaryTransformedUrl(url, COVER_OG_TRANSFORM)
+}
+
+async function uploadFileToCloudinaryWithPurpose(
+  file: File,
+  purpose: "default" | "cover",
+): Promise<{ secureUrl: string; publicId: string }> {
   assertUploadableFile(file)
 
-  const sigRes = await fetch("/api/upload", { method: "POST", cache: "no-store", credentials: "include" })
+  const sigRes = await fetch(`/api/upload?purpose=${purpose}`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "include",
+  })
   if (!sigRes.ok) {
     const errorData = (await sigRes.json().catch(() => ({}))) as { error?: string }
     throw new Error(errorData?.error || "Failed to fetch upload signature")
@@ -75,6 +97,16 @@ export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: s
     secureUrl: cloudinaryData.secure_url as string,
     publicId: cloudinaryData.public_id as string,
   }
+}
+
+export async function uploadFileToCloudinary(file: File): Promise<{ secureUrl: string; publicId: string }> {
+  return uploadFileToCloudinaryWithPurpose(file, "default")
+}
+
+export async function uploadCoverImageToCloudinary(
+  file: File,
+): Promise<{ secureUrl: string; publicId: string }> {
+  return uploadFileToCloudinaryWithPurpose(file, "cover")
 }
 
 export function isLikelyImageUrl(text: string): boolean {

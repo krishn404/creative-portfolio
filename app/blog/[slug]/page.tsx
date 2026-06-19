@@ -6,7 +6,7 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { SITE_URL } from "@/lib/seo/constants"
 import { renderPostContent } from "@/lib/blog/render-content"
-import { getCoverPreviewUrl } from "@/lib/cloudinary-upload"
+import { getCoverOgUrl, getCoverPreviewUrl } from "@/lib/cloudinary-upload"
 import { PostMeta } from "@/components/blog/PostMeta"
 import { ReadingProgress } from "@/components/blog/ReadingProgress"
 import { IncrementViews } from "@/components/blog/IncrementViews"
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!post) return { title: "Post not found" }
 
   const ogImage = post.coverImage
-    ? post.coverImage
+    ? getCoverOgUrl(post.coverImage)
     : `${SITE_URL}/api/og?title=${encodeURIComponent(post.title)}&subtitle=${encodeURIComponent(post.excerpt)}`
 
   return {

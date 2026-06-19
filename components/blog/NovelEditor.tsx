@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { EditorContent, useEditor } from "@tiptap/react"
+import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import TiptapLink from "@tiptap/extension-link"
@@ -37,6 +37,7 @@ import {
 } from "lucide-react"
 import { isLikelyImageUrl, uploadFileToCloudinary } from "@/lib/cloudinary-upload"
 import { SocialLink } from "@/lib/blog/social-link-extension"
+import { SocialLinkNodeView } from "@/components/blog/SocialLinkNodeView"
 import { SocialIcon } from "@/components/SocialIcon"
 import { BlogPostContent } from "@/components/blog/BlogPostContent"
 
@@ -143,7 +144,11 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
       TableRow,
       TableHeader,
       TableCell,
-      SocialLink,
+      SocialLink.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(SocialLinkNodeView)
+        },
+      }),
     ],
     [],
   )

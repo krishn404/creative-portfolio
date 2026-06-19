@@ -41,8 +41,9 @@ export const SocialLink = Node.create({
     return [{ tag: 'a[data-social-link="true"]' }]
   },
 
-  renderHTML({ HTMLAttributes }) {
-    const type = (HTMLAttributes.type ?? "link") as SocialLinkType
+  renderHTML({ node, HTMLAttributes }) {
+    const type = (node.attrs.type ?? "link") as SocialLinkType
+    const label = (node.attrs.label as string) || "Link"
     const children: Array<[string, Record<string, string>, ...unknown[]]> = []
 
     if (type === "spotify" || type === "instagram") {
@@ -59,13 +60,16 @@ export const SocialLink = Node.create({
     children.push([
       "span",
       mergeAttributes({ class: "social-link-label" }),
-      HTMLAttributes.label ?? "Link",
+      label,
     ])
 
     return [
       "a",
       mergeAttributes(HTMLAttributes, {
+        href: node.attrs.href,
         "data-social-link": "true",
+        "data-type": type,
+        "data-label": label,
         target: "_blank",
         rel: "noopener noreferrer nofollow",
         class: `social-link social-link--${type}`,

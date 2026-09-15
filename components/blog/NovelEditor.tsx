@@ -265,8 +265,12 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
           // Prefer plain text if available (manually written), otherwise use stripped HTML (AI-generated)
           const markdownContent = (text && text.trim()) ? text : stripHtmlTags(html || "")
           
-          // Convert markdown to HTML and insert
-          editor?.chain().focus().insertContent(htmlFromMarkdown(markdownContent)).run()
+          // Convert markdown to HTML
+          const markdownHtml = htmlFromMarkdown(markdownContent)
+          
+          // Clear existing content and insert markdown as properly formatted HTML
+          // This ensures markdown is immediately rendered with full formatting
+          editor?.chain().focus().clearContent().insertContent(markdownHtml).run()
           return true
         }
 

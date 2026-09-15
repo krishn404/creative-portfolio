@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { EditorContent, ReactNodeViewRenderer, useEditor } from "@tiptap/react"
-import { generateHTML } from "@tiptap/html"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import TiptapLink from "@tiptap/extension-link"
@@ -15,7 +14,6 @@ import Table from "@tiptap/extension-table"
 import TableRow from "@tiptap/extension-table-row"
 import TableCell from "@tiptap/extension-table-cell"
 import TableHeader from "@tiptap/extension-table-header"
-import DOMPurify from "isomorphic-dompurify"
 import { marked } from "marked"
 import {
   Bold,
@@ -44,7 +42,6 @@ import { SocialIcon } from "@/components/SocialIcon"
 import { BlogPostContent } from "@/components/blog/BlogPostContent"
 
 const AUTOSAVE_KEY = "blog-editor-autosave"
-const PREVIEW_DEBOUNCE_MS = 300
 
 type NovelEditorProps = {
   content?: string
@@ -169,8 +166,6 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
   const [darkMode, setDarkMode] = useState(false)
   const [savedAt, setSavedAt] = useState<Date | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [previewHtml, setPreviewHtml] = useState("")
-  const previewTimeoutRef = useRef<NodeJS.Timeout>()
 
   const extensions = useMemo(
     () => [
@@ -216,25 +211,6 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
     ],
     [],
   )
-
-  const updatePreviewHtml = useCallback((editorJson: any) => {
-    try {
-      const html = generateHTML(editorJson, extensions)
-      const sanitized = DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [
-          'a', 'b', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-          'i', 'img', 'li', 'ol', 'p', 'pre', 'span', 'strong', 'table', 'tbody', 'td', 'th',
-          'thead', 'tr', 'ul', 'u', 's', 'sup', 'sub'
-        ],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'data-social-icon', 'data-social-link', 'data-type', 'data-label', 'target', 'rel', 'colspan', 'rowspan'],
-        KEEP_CONTENT: true,
-      })
-      setPreviewHtml(sanitized)
-    } catch (err) {
-      console.error('Preview render error:', err)
-      setPreviewHtml('<p>Error rendering preview</p>')
-    }
-  }, [extensions])
 
   const editor = useEditor({
     extensions,
@@ -289,18 +265,11 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
       },
     },
     onUpdate: ({ editor }) => {
+      // Always store as JSON for consistent rendering
       const next = JSON.stringify(editor.getJSON())
       onChange(next)
       window.localStorage.setItem(AUTOSAVE_KEY, next)
       setSavedAt(new Date())
-
-      // Debounce preview update for performance
-      if (previewTimeoutRef.current) {
-        clearTimeout(previewTimeoutRef.current)
-      }
-      previewTimeoutRef.current = setTimeout(() => {
-        updatePreviewHtml(editor.getJSON())
-      }, PREVIEW_DEBOUNCE_MS)
     },
   })
 
@@ -328,15 +297,6 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
       window.localStorage.removeItem(AUTOSAVE_KEY)
     }
   }, [content, editor])
-
-  // Cleanup debounce timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (previewTimeoutRef.current) {
-        clearTimeout(previewTimeoutRef.current)
-      }
-    }
-  }, [])
 
   const pickImage = useCallback(() => {
     fileInputRef.current?.click()
@@ -388,6 +348,8 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
       </div>
     )
   }
+
+  const previewHtml = editor.getHTML()
 
   return (
     <div className={`blog-editor-shell border border-black ${darkMode ? "is-dark" : ""}`}>

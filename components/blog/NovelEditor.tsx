@@ -51,7 +51,20 @@ type NovelEditorProps = {
 function isMarkdownLike(text: string) {
   const trimmed = text.trim()
   if (!trimmed || trimmed.length < 3) return false
-  return /(^|\n)(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|\|.+\||!\[[^\]]*\]\(|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|_[^_]+_)/.test(trimmed)
+  
+  // Comprehensive markdown detection patterns:
+  // - Headings: # ## ### etc
+  // - Lists: - * + or numbered 1. 2. etc
+  // - Bold: **text** or __text__
+  // - Italic: *text* or _text_
+  // - Code: `inline` or ```blocks```
+  // - Links: [text](url)
+  // - Images: ![alt](url)
+  // - Blockquotes: > text
+  // - Tables: | col |
+  // - Strikethrough: ~~text~~
+  // - Horizontal rules: ---, ***, ___
+  return /(^|\n)(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|```|~~~|---|\*\*\*|___|\|.+\||!\[[^\]]*\]\(|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*]+\*(?!\*)|_[^_]+_(?!_)|`[^`]+`)/.test(trimmed)
 }
 
 function getInitialContent(content?: string) {
@@ -101,16 +114,50 @@ function htmlFromMarkdown(text: string) {
   }) as string
 }
 
-// Helper: strip HTML but preserve block breaks so markdown detection still works.
+/**
+ * Strip HTML tags while preserving markdown structure.
+ * Handles Claude-generated HTML output + manually written markdown
+ * 
+ * Key improvements:
+ * 1. Converts block tags to newlines to preserve markdown structure
+ * 2. Handles all common HTML entities
+ * 3. Preserves inline markdown markers (**, __, ~~, etc.)
+ * 4. Cleans up excess whitespace while maintaining readability
+ * 5. Handles both HTML-wrapped AI content and raw markdown
+ */
 function stripHtmlTags(html: string): string {
-  return html
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\s*\/?>/gi, "\n")
+  let result = html
+    // Replace opening block tags with newline (for proper separation)
+    .replace(/<(p|div|blockquote|h[1-6]|li|tr|td|th)\b[^>]*>/gi, "\n")
+    // Replace closing block tags with double newline (for section breaks)
+    .replace(/<\/(p|div|blockquote|h[1-6]|ul|ol|li|table|tr|td|th)\s*>/gi, "\n\n")
+    // Convert <br> and self-closing variants to newline
+    .replace(/<br\s*\/?>/gi, "\n")
+    // Convert list tags
+    .replace(/<(ul|ol)\b[^>]*>/gi, "\n")
+    // Remove all remaining HTML tags
     .replace(/<[^>]+>/g, "")
+    // Decode HTML entities (must be done after tag removal)
     .replace(/&nbsp;/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&hellip;/g, "...")
+    // Clean up excessive whitespace and newlines
+    .replace(/\n\n\n+/g, "\n\n")
+    // Remove trailing/leading whitespace on each line
+    .split("\n")
+    .map(line => line.trim())
+    .join("\n")
+    // Final trim
     .trim()
+
+  return result
 }
 
 export function NovelEditor({ content, onChange }: NovelEditorProps) {
@@ -176,20 +223,25 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
         const html = event.clipboardData?.getData("text/html")
         const text = event.clipboardData?.getData("text/plain")
 
+        // Handle image URLs
         if (text && isLikelyImageUrl(text)) {
           event.preventDefault()
           editor?.chain().focus().setImage({ src: text.trim() }).run()
           return true
         }
 
-        // Prefer plain text when available; otherwise check stripped HTML for markdown markers
+        // Try text first (for manually written markdown), then fall back to stripped HTML
+        // This ensures both AI-generated (HTML-wrapped) and manual markdown work
         const textToCheck = (text && text.trim()) || (html ? stripHtmlTags(html) : "")
 
+        // Enhanced markdown detection that catches all markdown patterns
         if (textToCheck && isMarkdownLike(textToCheck)) {
           event.preventDefault()
 
-          // Use plain text if it's available; otherwise use the stripped HTML
+          // Prefer plain text if available (manually written), otherwise use stripped HTML (AI-generated)
           const markdownContent = (text && text.trim()) ? text : stripHtmlTags(html || "")
+          
+          // Convert markdown to HTML and insert
           editor?.chain().focus().insertContent(htmlFromMarkdown(markdownContent)).run()
           return true
         }

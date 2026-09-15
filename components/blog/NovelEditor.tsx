@@ -101,6 +101,18 @@ function htmlFromMarkdown(text: string) {
   }) as string
 }
 
+// Helper: strip HTML but preserve block breaks so markdown detection still works.
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim()
+}
+
 export function NovelEditor({ content, onChange }: NovelEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState(false)
@@ -170,9 +182,15 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
           return true
         }
 
-        if (!html && text && isMarkdownLike(text)) {
+        // Prefer plain text when available; otherwise check stripped HTML for markdown markers
+        const textToCheck = (text && text.trim()) || (html ? stripHtmlTags(html) : "")
+
+        if (textToCheck && isMarkdownLike(textToCheck)) {
           event.preventDefault()
-          editor?.chain().focus().insertContent(htmlFromMarkdown(text)).run()
+
+          // Use plain text if it's available; otherwise use the stripped HTML
+          const markdownContent = (text && text.trim()) ? text : stripHtmlTags(html || "")
+          editor?.chain().focus().insertContent(htmlFromMarkdown(markdownContent)).run()
           return true
         }
 

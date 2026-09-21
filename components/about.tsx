@@ -3,6 +3,7 @@
 import { Instrument_Serif } from "next/font/google"
 import { motion, useReducedMotion } from "framer-motion"
 import SpotifyGlassWidget from "@/components/spotify-glass-widget"
+import LogoLoop, { type LogoItem } from "@/components/LogoLoop"
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -14,6 +15,14 @@ const headlineLines = [
 ]
 
 const disciplines = ["Posters", "Cover Art", "Campaigns", "Identity", "Visual Direction", "Writing"]
+
+const workedFor: LogoItem[] = [
+  { src: "/marquee/tbh.png", alt: "TBH", title: "TBH" },
+  { src: "/marquee/bypolar.png", alt: "Bypolar", title: "Bypolar" },
+  // { src: "/marquee/dl91.png", alt: "DL91", title: "DL91" },
+  { src: "/marquee/montage.png", alt: "Montage", title: "Montage" },
+  // { src: "/marquee/oriole.png", alt: "Oriole", title: "Oriole" },
+]
 
 export default function About() {
   const reduceMotion = useReducedMotion()
@@ -79,12 +88,25 @@ export default function About() {
             I build visual worlds for releases, campaigns, and people with something to say. The work moves between image-making, design, and direction. It is made to feel specific, immediate, and lived-in.
           </p>
 
-          <a
-            href="#selected-work"
-            className="mt-8 inline-flex rounded-sm text-base font-medium text-primary underline decoration-primary/40 underline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-          >
-            See the work <span aria-hidden="true">→</span>
-          </a>
+          <div className="mt-12">
+            <p className="mb-4 text-[0.68rem] uppercase tracking-[0.16em] text-muted-foreground">
+              I have worked for
+            </p>
+            <div className="relative overflow-hidden">
+              <LogoLoop
+                logos={workedFor}
+                speed={70}
+                direction="left"
+                logoHeight={64}
+                gap={56}
+                hoverSpeed={0}
+                scaleOnHover
+                fadeOut
+                fadeOutColor="#ffffff"
+                ariaLabel="People and teams I have worked for"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </section>

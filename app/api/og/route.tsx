@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const title = searchParams.get("title") ?? `${CREATOR_NAME} Portfolio`
   const subtitle =
-    searchParams.get("subtitle") ?? "Graphic Designer • Creative Developer • Visual Artist"
+    searchParams.get("subtitle") ?? "Visual Designer & Creative"
 
   return new ImageResponse(
     (

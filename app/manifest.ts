@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: SITE_NAME,
     short_name: "kantcancook",
     description:
-      "Official portfolio of kantcancook (psyx), a graphic designer and creative developer.",
+      "Visual design, posters, cover art, campaigns, writing, and creative direction by Krishna Kant Maharshi.",
     start_url: "/",
     scope: "/",
     display: "standalone",

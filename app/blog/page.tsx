@@ -2,12 +2,17 @@ import type { Metadata } from "next"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { buildMetadata } from "@/lib/seo/metadata"
+import { BLOG_DESCRIPTION, BLOG_NAME } from "@/lib/seo/constants"
+import { buildBlogJsonLd } from "@/lib/seo/schema"
 import { BlogListing } from "@/components/blog/BlogListing"
+import { JsonLd } from "@/components/seo/JsonLd"
 import type { BlogPost } from "@/lib/blog/utils"
 
+export const revalidate = 3600
+
 export const metadata: Metadata = buildMetadata({
-  title: "Off the Record | kantcancook",
-  description: "Essays on design, music, and creative process by kantcancook.",
+  title: BLOG_NAME,
+  description: BLOG_DESCRIPTION,
   path: "/blog",
 })
 
@@ -20,8 +25,11 @@ export default async function BlogPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      <BlogListing posts={posts} />
-    </div>
+    <>
+      <JsonLd data={buildBlogJsonLd(posts)} />
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        <BlogListing posts={posts} />
+      </div>
+    </>
   )
 }

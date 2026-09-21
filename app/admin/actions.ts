@@ -8,7 +8,7 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import type { SiteContent } from "@/lib/content"
 
-const categories = ["Posters", "Thumbnails", "Graphic Clothing"] as const
+const categories = ["Posters", "Thumbnails", "Apparel", "Graphic Clothing"] as const
 const statuses = ["draft", "published", "archived"] as const
 
 const workSchema = z.object({

@@ -7,12 +7,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
 import { ArrowLeft, ArrowRight, X } from "lucide-react"
-import type { MediaAsset, WorkItem } from "@/lib/content"
+import type { GalleryFilter, MediaAsset, WorkItem } from "@/lib/content"
+import { displayWorkCategory, GALLERY_FILTERS, workMatchesCategory } from "@/lib/content"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-const categories = ["All", "Posters", "Thumbnails", "Graphic Clothing"] as const
-type Category = (typeof categories)[number]
+const categories = GALLERY_FILTERS
+type Category = GalleryFilter
 
 const getWorkMedia = (work: WorkItem): MediaAsset[] => {
   const media = work.media?.filter((asset) => asset.type === "image" && asset.url) ?? []
@@ -129,7 +130,7 @@ export default function Gallery() {
   }, [])
 
   const filtered = useMemo(
-    () => (category === "All" ? works : works.filter((work: WorkItem) => work.category === category)),
+    () => works.filter((work: WorkItem) => workMatchesCategory(work, category)),
     [category, works],
   )
 
@@ -276,7 +277,11 @@ export default function Gallery() {
 
   return (
     <>
-      <section ref={ref} className="min-h-screen bg-background px-4 py-12 transition-colors duration-300 md:py-20">
+      <section
+        ref={ref}
+        id="selected-work"
+        className="min-h-screen scroll-mt-8 bg-background px-4 py-12 transition-colors duration-300 md:py-20"
+      >
         <div className="mx-auto max-w-7xl">
           <motion.div
             className="mb-10 space-y-3 md:mb-14"
@@ -284,19 +289,20 @@ export default function Gallery() {
             animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="text-xs font-light uppercase tracking-widest text-muted-foreground">Selected works</p>
+            <p className="text-xs font-light uppercase tracking-widest text-muted-foreground">Selected work</p>
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="space-y-1">
                 <h2 className="text-3xl font-light tracking-tight text-foreground md:text-4xl lg:text-5xl">
-                  Poster Collection
+                  Selected work
                 </h2>
                 <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                  Browse the work without leaving the page. Open any project for a full viewer, keyboard navigation, and
-                  inline details.
+                  Posters, cover artwork, campaigns, apparel graphics, and visual experiments made across music, film, culture, and independent projects.
                 </p>
               </div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                {filtered.length} {filtered.length === 1 ? "project" : "projects"}
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground" aria-live="polite">
+                {isLoading
+                  ? "Loading selected work…"
+                  : `${filtered.length} ${filtered.length === 1 ? "project" : "projects"}`}
               </p>
             </div>
           </motion.div>
@@ -320,7 +326,7 @@ export default function Gallery() {
           </div>
 
           {isLoading ? (
-            <p className="text-muted-foreground">Loading works...</p>
+            <p className="text-muted-foreground">Loading selected work…</p>
           ) : (
             <motion.div
               className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
@@ -338,6 +344,7 @@ export default function Gallery() {
                     variants={itemVariants}
                     whileHover={{ y: -8, transition: { duration: 0.3 } }}
                     className="group cursor-pointer text-left"
+                    aria-label={`Open project ${work.title}`}
                     onClick={() => openWork(work)}
                     onMouseEnter={() => setHoveredWorkId(work.id)}
                     onMouseLeave={() => setHoveredWorkId(null)}
@@ -367,7 +374,7 @@ export default function Gallery() {
                       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
                         <div className="min-w-0">
                           <p className="text-xs uppercase tracking-[0.2em] text-white/75">
-                            {work.category ?? "Selected Work"}
+                            {displayWorkCategory(work.category)}
                           </p>
                           <h3 className="mt-1 line-clamp-1 text-base font-medium text-white">{work.title}</h3>
                         </div>
@@ -457,7 +464,7 @@ export default function Gallery() {
                               <h3 className="text-2xl font-light tracking-tight text-foreground">{selectedWork.title}</h3>
                               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 {selectedWork.year ? <span>{selectedWork.year}</span> : null}
-                                {selectedWork.category ? <span>{selectedWork.category}</span> : null}
+                                {selectedWork.category ? <span>{displayWorkCategory(selectedWork.category)}</span> : null}
                               </div>
                             </div>
                           </div>

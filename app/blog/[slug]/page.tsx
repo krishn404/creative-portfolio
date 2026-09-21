@@ -4,7 +4,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
-import { SITE_URL } from "@/lib/seo/constants"
+import { SITE_URL, BLOG_NAME } from "@/lib/seo/constants"
+import { articleKeywords, buildBlogPostingJsonLd } from "@/lib/seo/schema"
 import { renderPostContent } from "@/lib/blog/render-content"
 import { BlogPostContent } from "@/components/blog/BlogPostContent"
 import { getCoverOgUrl, getCoverPreviewUrl } from "@/lib/cloudinary-upload"
@@ -12,6 +13,7 @@ import { PostMeta } from "@/components/blog/PostMeta"
 import { ReadingProgress } from "@/components/blog/ReadingProgress"
 import { IncrementViews } from "@/components/blog/IncrementViews"
 import type { BlogPost } from "@/lib/blog/utils"
+import { JsonLd } from "@/components/seo/JsonLd"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -33,6 +35,13 @@ async function getAllPublished(): Promise<BlogPost[]> {
   }
 }
 
+export async function generateStaticParams() {
+  const posts = await getAllPublished()
+  return posts.map((post) => ({ slug: post.slug }))
+}
+
+export const revalidate = 3600
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const post = await getPost(slug)
@@ -41,20 +50,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = post.coverImage
     ? getCoverOgUrl(post.coverImage)
     : `${SITE_URL}/api/og?title=${encodeURIComponent(post.title)}&subtitle=${encodeURIComponent(post.excerpt)}`
+  const keywords = articleKeywords(post)
 
   return {
-    title: post.title,
+    title: { absolute: `${post.title} | ${BLOG_NAME}` },
     description: post.excerpt,
+    keywords,
+    alternates: {
+      canonical: `${SITE_URL}/blog/${post.slug}`,
+    },
+    authors: [{ name: "Krishna Kant Maharshi", url: SITE_URL }],
     openGraph: {
-      title: post.title,
+      title: `${post.title} | ${BLOG_NAME}`,
       description: post.excerpt,
       type: "article",
       url: `${SITE_URL}/blog/${post.slug}`,
+      publishedTime: post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
+      authors: ["Krishna Kant Maharshi"],
+      tags: keywords,
       images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
+      title: `${post.title} | ${BLOG_NAME}`,
       description: post.excerpt,
       images: [ogImage],
     },
@@ -68,12 +86,16 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) notFound()
 
   const html = renderPostContent(post.content)
+  const ogImage = post.coverImage
+    ? getCoverOgUrl(post.coverImage)
+    : `${SITE_URL}/api/og?title=${encodeURIComponent(post.title)}&subtitle=${encodeURIComponent(post.excerpt)}`
   const currentIndex = allPosts.findIndex((p) => p.slug === slug)
   const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null
 
   return (
     <>
+      <JsonLd data={buildBlogPostingJsonLd(post, ogImage)} />
       <ReadingProgress />
       <IncrementViews slug={slug} />
       <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
@@ -81,7 +103,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           href="/blog"
           className="blog-font-mono inline-flex min-h-10 items-center text-xs tracking-wider hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
         >
-          ← Off the Record
+          ← {BLOG_NAME}
         </Link>
         <hr className="my-6 border-black" />
 

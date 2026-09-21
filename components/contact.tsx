@@ -4,20 +4,17 @@ import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
 import type { SiteContent } from "@/lib/content"
+import { CONTACT_CTA, getDefaultContent } from "@/lib/content"
 import ProfileCard from "@/components/profilecard"
 import { RichText } from "@/components/RichText"
-import { ChefHat, PhoneCall, PlusCircle } from "lucide-react"
+import { ChefHat, Mail, PlusCircle } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-const defaultCta =
-  "Interested in collaborating or commissioning a piece? I'd love to hear about your project."
-const defaultEmail = "psyxdes@gmail.com"
-const defaultSocials = [
-  { label: "Instagram", href: "https://instagram.com/kantcancook" },
-  { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
-  { label: "Email", href: "mailto:psyxdes@gmail.com" },
-]
+const defaults = getDefaultContent()
+const defaultCta = CONTACT_CTA
+const defaultEmail = defaults.contact.email
+const defaultSocials = defaults.contact.socials
 
 const profileInfo = {
   name: "Krishnakant Maharshi.",
@@ -26,9 +23,9 @@ const profileInfo = {
   portfolioLink: "https://instagram.com/kantcancook",
   statusText: "Available for work",
   Icon1: PlusCircle,
-  Icon2: PhoneCall,
-  SecondaryBtnText: "Book your call",
-  PrimaryBtnText: "Share idea",
+  Icon2: Mail,
+  SecondaryBtnText: "Email me",
+  PrimaryBtnText: "Start a project",
   subText: "Let's cook together?",
   subIcon: ChefHat,
 }
@@ -38,13 +35,12 @@ export default function Contact() {
   const cta = data?.contact?.cta ?? defaultCta
   const email = data?.contact?.email ?? defaultEmail
   const socialLinks = data?.contact?.socials ?? defaultSocials
+  const ctaParagraphs = cta.split("\n\n").filter(Boolean)
 
-  let bottomLinks = socialLinks.filter(
-    (link) => link.label === "LinkedIn" || link.label === "Email"
-  )
-  if (bottomLinks.length === 0) {
-    bottomLinks = [{ label: "Email", href: `mailto:${email}` }]
-  }
+  const instagramLink =
+    socialLinks.find((link) => link.label.toLowerCase() === "instagram") ??
+    defaultSocials.find((link) => link.label === "Instagram")
+  const emailHref = `mailto:${email}`
 
   const { ref, inView } = useInView({
     triggerOnce: true,
@@ -77,6 +73,7 @@ export default function Contact() {
   return (
     <section
       ref={ref}
+      id="contact"
       className="min-h-screen py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 lg:px-8 bg-background border-t border-border transition-colors duration-300"
     >
       <div className="max-w-6xl mx-auto w-full">
@@ -92,17 +89,46 @@ export default function Contact() {
           >
             <div className="inline-block px-4 py-2 rounded-full bg-muted/50 mb-6">
               <p className="text-xs sm:text-sm font-light tracking-widest uppercase text-foreground">
-                Get in Touch
+                Contact
               </p>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-4 md:mb-6">
-              Let's create together
+              Have a project in mind?
             </h2>
-            <RichText
-              as="p"
-              text={cta}
-              className="text-sm sm:text-base md:text-lg font-light text-muted-foreground leading-relaxed max-w-2xl mx-auto"
-            />
+            <div className="mx-auto max-w-2xl space-y-4">
+              {ctaParagraphs.map((paragraph) => (
+                <RichText
+                  key={paragraph}
+                  as="p"
+                  text={paragraph}
+                  className="text-sm sm:text-base md:text-lg font-light text-muted-foreground leading-relaxed"
+                />
+              ))}
+            </div>
+            <nav className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm font-light text-foreground">
+              <a
+                href="#contact-start"
+                className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+              >
+                Start a project
+              </a>
+              <a
+                href={emailHref}
+                className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+              >
+                Email me
+              </a>
+              {instagramLink ? (
+                <a
+                  href={instagramLink.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                >
+                  Instagram
+                </a>
+              ) : null}
+            </nav>
           </motion.div>
 
           {/* Profile Card */}
@@ -110,19 +136,20 @@ export default function Contact() {
             variants={itemVariants}
             className="flex w-full items-center justify-center mb-12 md:mb-16"
           >
-            <div className="relative">
+            <div id="contact-start" className="relative scroll-mt-8">
               <ProfileCard
                 name="Krishna Kant Maharshi"
-                title="Visual Artist"
+                title="Visual Designer & Creative"
                 portfolioText={profileInfo.portfolioText}
                 portfolioLink={profileInfo.portfolioLink}
                 statusText={profileInfo.statusText}
                 Icon1={profileInfo.Icon1}
                 Icon2={profileInfo.Icon2}
-                SecondaryBtnText="Book your call"
+                SecondaryBtnText={profileInfo.SecondaryBtnText}
                 subText={profileInfo.subText}
                 Icon3={profileInfo.subIcon}
                 sourceContext="contact-page-profile-card"
+                secondaryHref={emailHref}
               />
             </div>
           </motion.div>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import { useDropzone } from "react-dropzone"
 import { z } from "zod"
 import useSWR, { mutate } from "swr"
-import type { SiteContent, WorkItem } from "@/lib/content"
+import type { SiteContent, WorkCategory, WorkItem } from "@/lib/content"
 import { uploadFileToCloudinary, MAX_UPLOAD_BYTES } from "@/lib/cloudinary-upload"
 import { RICH_TEXT_SYNTAX_HELP } from "@/lib/rich-text"
 import { useToast } from "@/hooks/use-toast"
@@ -39,12 +39,11 @@ import Link from "next/link"
 import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit, PenLine } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getDefaultContent } from "@/lib/content"
+import { displayWorkCategory, getDefaultContent, normalizeWorkCategory, WORK_CATEGORIES } from "@/lib/content"
 import type { Actions } from "@/lib/actions" // Import Actions here
 import type { SharedIdea } from "@/lib/shared-ideas"
 
-const categoryOptions = ["Posters", "Thumbnails", "Graphic Clothing"] as const
-export type WorkCategory = (typeof categoryOptions)[number]
+const categoryOptions = WORK_CATEGORIES
 
 const statusOptions = ["draft", "published", "archived"] as const
 export type WorkStatus = (typeof statusOptions)[number]
@@ -127,7 +126,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
         setNewWorkFormData({
           title: newWork.title,
           year: newWork.year || "",
-          category: newWork.category || "Posters",
+          category: normalizeWorkCategory(newWork.category) || "Posters",
           status: newWork.status || "draft",
         })
 
@@ -151,7 +150,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     const base = [...(content.works ?? [])].sort((a, b) => a.title.localeCompare(b.title))
     return base
       .filter((w) => (statusFilter === "All" ? true : (w.status ?? "draft") === statusFilter))
-      .filter((w) => (categoryFilter === "All" ? true : (w.category ?? "") === categoryFilter))
+      .filter((w) => (categoryFilter === "All" ? true : normalizeWorkCategory(w.category) === categoryFilter))
       .filter((w) => w.title.toLowerCase().includes(workSearch.toLowerCase()))
   }, [content.works, statusFilter, categoryFilter, workSearch])
 
@@ -351,7 +350,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       setNewWorkFormData({
         title: newWork.title,
         year: newWork.year || "",
-        category: newWork.category || "Posters",
+        category: normalizeWorkCategory(newWork.category) || "Posters",
         status: newWork.status || "draft",
       })
     }
@@ -935,7 +934,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Category</label>
                 <Select
-                  value={newWork?.category ?? categoryOptions[0]}
+                  value={normalizeWorkCategory(newWork?.category) ?? categoryOptions[0]}
                   onValueChange={(value) =>
                     setNewWork((prev) => (prev ? { ...prev, category: value as WorkCategory } : prev))
                   }
@@ -1154,12 +1153,12 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(work.title)
   const [year, setYear] = useState(work.year || "")
-  const [category, setCategory] = useState<WorkCategory>(work.category || "Posters")
+  const [category, setCategory] = useState<WorkCategory>(normalizeWorkCategory(work.category) || "Posters")
 
   useEffect(() => {
     setTitle(work.title)
     setYear(work.year || "")
-    setCategory(work.category || "Posters")
+    setCategory(normalizeWorkCategory(work.category) || "Posters")
   }, [work.title, work.year, work.category])
 
   const statusIcons = {
@@ -1227,7 +1226,7 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
           <div className="space-y-1">
             <h3 className="font-semibold line-clamp-2">{title || "Untitled"}</h3>
             <p className="text-xs text-muted-foreground">
-              {work.category ?? "Uncategorized"} {work.year ? `• ${work.year}` : ""}
+              {displayWorkCategory(work.category) ?? "Uncategorized"} {work.year ? `• ${work.year}` : ""}
             </p>
           </div>
         )}

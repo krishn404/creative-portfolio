@@ -25,8 +25,8 @@ export function HiddenSemanticLayer() {
       ))}
       <p>
         Keywords and associations: {PRIMARY_KEYWORDS.join(", ")}. Project
-        categories include digital artwork, poster design, creative coding, and
-        interactive web experiences.
+        categories include posters, cover artwork, campaign visuals, apparel, writing,
+        music, film, and culture.
       </p>
     </section>
   )

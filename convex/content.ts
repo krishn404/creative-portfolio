@@ -13,17 +13,28 @@ export const get = query({
       // Return default content if none exists
       return {
         about: {
-          headline: "Building stories through design and creativity",
+          headline: "Visual designer and creative working across music, film, culture, and apparel.",
           paragraphs: [
-            "I am the Creative Head at The Blackbombay House, a music production company where I manage and create visual work across different areas like social media, branding, video editing, and storytelling.",
-            "My work includes graphic design, writing copy and scripts, basic video editing, and leading creative campaigns that connect with people. I enjoy shaping ideas into visuals that tell clear and engaging stories.",
-            "Open for freelance, collaboration, and creative roles in design, content, and media.",
+            "I’m Krishna Kant Maharshi, an independent visual designer and creative working across music, film, culture, and apparel.",
+            "I make posters, cover artwork, social campaigns, identities, and other visual work that helps ideas find their shape. My practice sits between graphic design, writing, image-making, and visual direction. I’m interested in work that feels immediate, a little strange, and connected to the personality behind it.",
+            "Alongside my independent work, I work with a music production house startup and a film and video production house. I also create posters and promotional visuals for rap artists, stand-up comics, and other creative projects.",
+            "I write as well. Through interviews, reviews, and conversations, I explore the people and ideas shaping music and visual culture.",
+            "I’m open to freelance commissions, collaborations, and creative roles in design, content, music, and media.",
           ],
-          tags: ["Creative Direction", "Graphic Design", "Video Editing", "Copywriting", "Social Media Creatives"],
+          tags: [
+            "Poster design",
+            "Cover artwork",
+            "Campaign visuals",
+            "Art direction",
+            "Social content",
+            "Writing",
+            "Basic video editing",
+            "Apparel graphics",
+          ],
         },
         contact: {
           email: "psyxdes@gmail.com",
-          cta: "Interested in collaborating or commissioning a piece? I'd love to hear about your project.",
+          cta: "I’m available for poster design, cover artwork, campaign visuals, creative direction, writing, and selected freelance collaborations.\n\nTell me what you’re making, what you need, and when you need it.",
           socials: [
             { label: "Instagram", href: "https://instagram.com/kantcancook" },
             { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
@@ -32,7 +43,7 @@ export const get = query({
           ],
         },
         footer: {
-          note: "© 2025 Krishnakant Maharshi. All rights reserved.",
+          note: "© 2026 Krishna Kant Maharshi. All rights reserved.",
         },
       }
     }

@@ -1,21 +1,12 @@
-"use client"
-
-import Hero from '@/components/hero'
-import Gallery from '@/components/gallery'
-import About from '@/components/about'
-import BlogSection from '@/components/blog/BlogSection'
-import Contact from '@/components/contact'
-import Stickers from '@/components/stickers'
+import HomePage from "@/components/home-page"
+import { JsonLd } from "@/components/seo/JsonLd"
+import { buildPortfolioJsonLd } from "@/lib/seo/schema"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <Stickers />
-      <Hero />
-      <About />
-      <Gallery />
-      <BlogSection />
-      <Contact />
-    </main>
+    <>
+      <JsonLd data={buildPortfolioJsonLd()} />
+      <HomePage />
+    </>
   )
 }

@@ -1,3 +1,8 @@
+export const WORK_CATEGORIES = ["Posters", "Thumbnails", "Apparel"] as const
+export type WorkCategory = (typeof WORK_CATEGORIES)[number]
+export const GALLERY_FILTERS = ["All", ...WORK_CATEGORIES] as const
+export type GalleryFilter = (typeof GALLERY_FILTERS)[number]
+
 export type WorkItem = {
   id: string
   img: string
@@ -5,7 +10,7 @@ export type WorkItem = {
   title: string
   year?: string
   publicId?: string
-  category?: "Posters" | "Thumbnails" | "Graphic Clothing"
+  category?: WorkCategory | "Graphic Clothing" | string
   status?: "draft" | "published" | "archived"
   showInAbout?: boolean
 }
@@ -34,18 +39,55 @@ export type SiteContent = {
   }
 }
 
+export const ABOUT_HEADLINE =
+  "I make visuals for things I care about music, film, culture, people, and the weird ideas that live somewhere in between."
+
+export const ABOUT_PARAGRAPHS = [
+  "Posters · Cover Art · Campaigns · Identity · Visual Direction · Writing",
+]
+
+export const ABOUT_TAGS = [
+  "Poster design",
+  "Cover artwork",
+  "Campaign visuals",
+  "Art direction",
+  "Social content",
+  "Writing",
+  "Basic video editing",
+  "Apparel graphics",
+]
+
+export const CONTACT_CTA = [
+  "I’m available for poster design, cover artwork, campaign visuals, creative direction, writing, and selected freelance collaborations.",
+  "Tell me what you’re making, what you need, and when you need it.",
+].join("\n\n")
+
+export function normalizeWorkCategory(category?: string): WorkCategory | undefined {
+  if (!category) return undefined
+  if (category === "Graphic Clothing" || category === "Apparel") return "Apparel"
+  if (category === "Posters" || category === "Thumbnails") return category
+  return undefined
+}
+
+export function displayWorkCategory(category?: string): string {
+  return normalizeWorkCategory(category) ?? category ?? "Selected Work"
+}
+
+export function workMatchesCategory(work: WorkItem, category: GalleryFilter): boolean {
+  if (category === "All") return true
+  return normalizeWorkCategory(work.category) === category
+}
+
 export const getDefaultContent = (): SiteContent => ({
   about: {
-    headline: "I work in visuals across music, brands, and apparel.",
-    paragraphs: [
-      "My work spans music covers, corporate visuals, and apparel including shirts, tees, and bottomwear, alongside freelance projects while managing all Design direction at The BlackBombay House. For major artworks and core visual direction I work primarily in [[tool|Photoshop|photoshop]] and for structured design needs like corporate assets, carousels, and rapid layouts I rely on [[tool|Canva|canva]]. Visually, my work operates between chaos and darker aesthetics, driven by raw textures and deliberate imperfection, while staying open to continuous experimentation.",
-    ],
-    tags: ["Creative Direction", "Graphic Design", "Video Editing", "Copywriting", "Social Media Creatives"],
+    headline: ABOUT_HEADLINE,
+    paragraphs: ABOUT_PARAGRAPHS,
+    tags: ABOUT_TAGS,
   },
   works: [],
   contact: {
     email: "psyxdes@gmail.com",
-    cta: "Interested in collaborating or commissioning a piece? I'd love to hear about your project.",
+    cta: CONTACT_CTA,
     socials: [
       { label: "Instagram", href: "https://instagram.com/kantcancook" },
       { label: "Pinterest", href: "https://pinterest.com/psyxyx" },
@@ -53,7 +95,7 @@ export const getDefaultContent = (): SiteContent => ({
     ],
   },
   footer: {
-    note: "© 2025 Krishnakant Maharshi. All rights reserved.",
+    note: "© 2026 Krishna Kant Maharshi. All rights reserved.",
   },
 })
 

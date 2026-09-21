@@ -8,9 +8,9 @@ import {
   SITE_URL,
 } from "@/lib/seo/constants"
 
-const defaultTitle = "kantcancook | Graphic Designer & Creative Developer"
+const defaultTitle = "Krishna Kant Maharshi — Visual Designer & Creative"
 const defaultDescription =
-  "Official portfolio of kantcancook (psyx), a graphic designer, creative developer, and visual artist building experimental digital experiences."
+  "Visual design, posters, cover art, campaigns, writing, and creative direction by Krishna Kant Maharshi. Working across music, film, apparel, and culture."
 
 export function buildMetadata({
   title,
@@ -30,7 +30,7 @@ export function buildMetadata({
     metadataBase: new URL(SITE_URL),
     title: {
       default: defaultTitle,
-      template: "%s | kantcancook",
+      template: "%s | Krishna Kant Maharshi",
     },
     description: resolvedDescription,
     applicationName: SITE_NAME,
@@ -65,7 +65,7 @@ export function buildMetadata({
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: "kantcancook portfolio preview",
+          alt: "Krishna Kant Maharshi portfolio preview",
         },
       ],
     },
@@ -106,9 +106,9 @@ export function buildSeoPageMetadata(): Metadata {
     publisher: CREATOR_NAME,
     category: "art and design portfolio",
     robots: {
-      index: true,
-      follow: true,
-      nocache: false,
+      index: false,
+      follow: false,
+      nocache: true,
     },
     openGraph: {
       type: "website",

@@ -89,8 +89,8 @@ export default function SpotifyGlassWidget() {
   const cdTopHover = isCompact ? "20px" : "30px"
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
+    <div className="flex w-full flex-col items-start">
+      {/* <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p> */}
 
       <motion.a
         href={hasData ? data!.url : "https://open.spotify.com"}
@@ -453,8 +453,8 @@ export default function SpotifyGlassWidget() {
 
 function SpotifyGlassSkeleton() {
   return (
-    <div className="flex w-full flex-col items-center">
-      <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p>
+    <div className="flex w-full flex-col items-start">
+      {/* <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p> */}
 
       <div
         className="relative overflow-hidden animate-pulse"

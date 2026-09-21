@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { BlogPost } from "@/lib/blog/utils"
+import { BLOG_DESCRIPTION, BLOG_NAME } from "@/lib/seo/constants"
 import { PostGrid } from "./PostGrid"
 
 type BlogListingProps = {
@@ -17,7 +18,7 @@ export function BlogListing({
 }: BlogListingProps) {
   const title = (
     <TitleTag className="blog-font-headline glitch text-5xl font-semibold sm:text-7xl md:text-8xl lg:text-[96px]">
-      Off the Record.
+      {BLOG_NAME}.
     </TitleTag>
   )
 
@@ -32,6 +33,9 @@ export function BlogListing({
       ) : (
         title
       )}
+      <p className="blog-font-body mt-6 max-w-2xl text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg">
+        {BLOG_DESCRIPTION}
+      </p>
       <hr className="my-8 border-black" />
       <PostGrid posts={posts} isLoading={isLoading} />
     </>

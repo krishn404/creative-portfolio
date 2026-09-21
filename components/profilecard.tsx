@@ -35,7 +35,7 @@ const TAG_OPTIONS: Record<keyof ExtractedTags, string[]> = {
     "Creative Direction",
     "Thumbnail",
     "Promotional commercial",
-    "Clothing",
+    "Apparel",
     "Other",
   ],
   urgency: ["Immediate (1 day)", "1 week", "1 month", "Flexible"],
@@ -166,6 +166,7 @@ const ProfileCard = ({
   sourceContext = "profile-card",
   // ── NEW: your Cal.com link, e.g. "yourname/30min"
   calLink = "",
+  secondaryHref,
 }: {
   name: string
   title: string
@@ -180,6 +181,7 @@ const ProfileCard = ({
   sourceContext?: string
   /** Cal.com booking link — everything after cal.com/, e.g. "yourname/30min" */
   calLink?: string
+  secondaryHref?: string
 }) => {
   const icon1 = <Icon1 className='w-4' />
   const icon2 = <Icon2 className='w-4' />
@@ -630,7 +632,7 @@ const ProfileCard = ({
             <div className="w-[55px] h-[55px]  rounded-full overflow-hidden flex-shrink-0">
               <Image
                 src="/pfp.jpg"
-                alt="idk"
+                alt="Portrait of Krishna Kant Maharshi"
                 width={500}
                 height={500}
                 className="w-full h-full object-cover"
@@ -657,23 +659,34 @@ const ProfileCard = ({
           <button
             ref={primaryButtonRef}
             onClick={openModal}
+            aria-label="Start a project"
             className="w-full h-full text-xs px-3 py-2 cursor-pointer flex items-center justify-center gap-2 text-white"
           >
             <span className="text-white">{icon1}</span>
-            <span className="text-white">Share your idea</span>
+            <span className="text-white">Start a project</span>
           </button>
         </NeumorphWrapper>
 
       <NeumorphWrapper className="cursor-pointer w-full h-max rounded-xl after:border-r-0 after:rounded-xl after:border-t bg-[#20211e] border-black/30">
-        <button
-          data-cal-namespace="30min"
-          data-cal-link="psyx-czskrr/30min"
-          data-cal-config='{"layout":"month_view","useSlotsViewOnSmallScreen":"true"}'
-          className="w-full h-full text-xs px-3 py-2 cursor-pointer flex items-center justify-center gap-2 text-white"
-        >
-          <span className="text-white">{icon2}</span>
-          <span className="text-white">{SecondaryBtnText}</span>
-        </button>
+        {secondaryHref ? (
+          <a
+            href={secondaryHref}
+            className="w-full h-full text-xs px-3 py-2 cursor-pointer flex items-center justify-center gap-2 text-white"
+          >
+            <span className="text-white">{icon2}</span>
+            <span className="text-white">{SecondaryBtnText}</span>
+          </a>
+        ) : (
+          <button
+            data-cal-namespace="30min"
+            data-cal-link="psyx-czskrr/30min"
+            data-cal-config='{"layout":"month_view","useSlotsViewOnSmallScreen":"true"}'
+            className="w-full h-full text-xs px-3 py-2 cursor-pointer flex items-center justify-center gap-2 text-white"
+          >
+            <span className="text-white">{icon2}</span>
+            <span className="text-white">{SecondaryBtnText}</span>
+          </button>
+        )}
       </NeumorphWrapper>
 </div>
       </div>
@@ -707,7 +720,7 @@ const ProfileCard = ({
             <motion.div
               role="dialog"
               aria-modal="true"
-              aria-label="Share your idea"
+              aria-label="Start a project"
               className={`relative z-[101] w-full ${
                 isMobile
                   ? "h-[92vh] rounded-t-[2rem] bg-[#20211e] border border-white/10 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
@@ -735,7 +748,7 @@ const ProfileCard = ({
               {/* ── Header ── */}
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Share your idea</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Start a project</p>
                   <p className="text-sm text-white/70">Voice first, text fallback</p>
                 </div>
                 <button

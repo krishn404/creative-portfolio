@@ -1,0 +1,21 @@
+"use client"
+
+import Hero from "@/components/hero"
+import Gallery from "@/components/gallery"
+import About from "@/components/about"
+import BlogSection from "@/components/blog/BlogSection"
+import Contact from "@/components/contact"
+import Stickers from "@/components/stickers"
+
+export default function HomePage() {
+  return (
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
+      <Stickers />
+      <Hero />
+      <About />
+      <Gallery />
+      <BlogSection />
+      <Contact />
+    </main>
+  )
+}

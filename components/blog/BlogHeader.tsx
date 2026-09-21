@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 
 const links = [
   { href: "/#writing", label: "HOME" },
-  { href: "/blog", label: "OFF THE RECORD" },
+  { href: "/blog", label: "KEZUAL TALKS W KANT" },
 ]
 
 export function BlogHeader() {

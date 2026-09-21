@@ -39,18 +39,38 @@ interface LastFmTrackInfoResponse {
 
 function normalizeImageUrl(url: string): string {
   if (!url) return ""
-  // Last.fm may return http image URLs; force https to avoid mixed-content blocking.
-  if (url.startsWith("http://")) return `https://${url.slice("http://".length)}`
+
+  // Last.fm may return HTTP image URLs.
+  // Force HTTPS to avoid mixed-content blocking.
+  if (url.startsWith("http://")) {
+    return `https://${url.slice("http://".length)}`
+  }
+
   return url
 }
 
 function getBestImage(images: LastFmImage[] | undefined): string {
-  if (!images || images.length === 0) return ""
-  const preferredOrder: Array<LastFmImage["size"]> = ["extralarge", "large", "medium", "small"]
-  for (const size of preferredOrder) {
-    const image = images.find((img) => img.size === size && img["#text"])
-    if (image?.["#text"]) return normalizeImageUrl(image["#text"])
+  if (!images || images.length === 0) {
+    return ""
   }
+
+  const preferredOrder: Array<LastFmImage["size"]> = [
+    "extralarge",
+    "large",
+    "medium",
+    "small",
+  ]
+
+  for (const size of preferredOrder) {
+    const image = images.find(
+      (img) => img.size === size && img["#text"]
+    )
+
+    if (image?.["#text"]) {
+      return normalizeImageUrl(image["#text"])
+    }
+  }
+
   return normalizeImageUrl(images[0]?.["#text"] ?? "")
 }
 
@@ -70,14 +90,27 @@ async function getTrackInfoImage(args: {
     format: "json",
   })
 
-  const response = await fetch(`https://ws.audioscrobbler.com/2.0/?${params.toString()}`, {
-    next: { revalidate: 300 },
-  })
+  try {
+    const response = await fetch(
+      `https://ws.audioscrobbler.com/2.0/?${params.toString()}`,
+      {
+        next: {
+          revalidate: 300,
+        },
+      }
+    )
 
-  if (!response.ok) return ""
+    if (!response.ok) {
+      return ""
+    }
 
-  const data: LastFmTrackInfoResponse = await response.json()
-  return getBestImage(data.track?.album?.image)
+    const data: LastFmTrackInfoResponse = await response.json()
+
+    return getBestImage(data.track?.album?.image)
+  } catch (error) {
+    console.error("Last.fm track info failed:", error)
+    return ""
+  }
 }
 
 export async function getLastFmStatus(): Promise<SpotifyStatus | null> {
@@ -85,6 +118,10 @@ export async function getLastFmStatus(): Promise<SpotifyStatus | null> {
   const username = process.env.LASTFM_USERNAME
 
   if (!apiKey || !username) {
+    console.warn(
+      "Last.fm credentials are not configured"
+    )
+
     return null
   }
 
@@ -96,43 +133,74 @@ export async function getLastFmStatus(): Promise<SpotifyStatus | null> {
     limit: "1",
   })
 
-  const response = await fetch(`https://ws.audioscrobbler.com/2.0/?${params.toString()}`, {
-    next: { revalidate: 60 },
-  })
+  try {
+    const response = await fetch(
+      `https://ws.audioscrobbler.com/2.0/?${params.toString()}`,
+      {
+        next: {
+          revalidate: 60,
+        },
+      }
+    )
 
-  if (!response.ok) {
-    console.error("Failed to fetch Last.fm status:", response.status, await response.text())
-    return null
-  }
+    if (!response.ok) {
+      console.error(
+        "Failed to fetch Last.fm status:",
+        response.status,
+        await response.text()
+      )
 
-  const data: LastFmRecentTracksResponse = await response.json()
-  const track = data.recenttracks?.track?.[0]
-  if (!track) return null
+      return null
+    }
 
-  const isNowPlaying = track["@attr"]?.nowplaying === "true"
-  const title = track.name || "Unknown track"
-  const artist = track.artist?.["#text"] || "Unknown artist"
-  const album = track.album?.["#text"] || ""
-  let albumArt = getBestImage(track.image)
+    const data: LastFmRecentTracksResponse =
+      await response.json()
 
-  if (!albumArt && title && artist) {
-    albumArt = await getTrackInfoImage({
-      apiKey,
+    const track = data.recenttracks?.track?.[0]
+
+    if (!track) {
+      return null
+    }
+
+    const isNowPlaying =
+      track["@attr"]?.nowplaying === "true"
+
+    const title = track.name || "Unknown track"
+    const artist =
+      track.artist?.["#text"] || "Unknown artist"
+    const album =
+      track.album?.["#text"] || ""
+
+    let albumArt = getBestImage(track.image)
+
+    if (!albumArt && title && artist) {
+      albumArt = await getTrackInfoImage({
+        apiKey,
+        artist,
+        track: title,
+        username,
+      })
+    }
+
+    return {
+      isPlaying: isNowPlaying,
+      title,
       artist,
-      track: title,
-      username,
-    })
-  }
+      album,
+      albumArt,
+      url: track.url || "https://www.last.fm",
+      playedAt: track.date?.uts
+        ? Number(track.date.uts) * 1000
+        : Date.now(),
+      progressMs: null,
+      durationMs: null,
+    }
+  } catch (error) {
+    console.error(
+      "Error fetching Last.fm status:",
+      error
+    )
 
-  return {
-    isPlaying: isNowPlaying,
-    title,
-    artist,
-    album,
-    albumArt,
-    url: track.url || "https://www.last.fm",
-    playedAt: track.date?.uts ? Number(track.date.uts) * 1000 : Date.now(),
-    progressMs: null,
-    durationMs: null,
+    return null
   }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import useSWR from "swr"
 import { motion, useReducedMotion } from "framer-motion"
 
@@ -16,47 +16,118 @@ interface SpotifyStatus {
   durationMs: number | null
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = async (url: string): Promise<SpotifyStatus | null> => {
+  const response = await fetch(url, {
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch music status: ${response.status}`
+    )
+  }
+
+  return response.json()
+}
 
 function formatTime(ms: number | null): string {
   if (!ms) return "0:00"
+
   const totalSeconds = Math.floor(ms / 1000)
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+
+  return `${minutes}:${seconds
+    .toString()
+    .padStart(2, "0")}`
 }
 
 export default function SpotifyGlassWidget() {
-  const { data, error } = useSWR<SpotifyStatus | null>("/api/spotify/status", fetcher, {
-    refreshInterval: 15000,
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-  })
+  const { data, error } = useSWR<SpotifyStatus | null>(
+    "/api/spotify/status",
+    fetcher,
+    {
+      /*
+       * The API itself decides:
+       * Spotify -> Last.fm fallback.
+       *
+       * Poll frequently enough to detect when Spotify
+       * becomes available again.
+       */
+      refreshInterval: 15000,
+
+      /*
+       * Re-check when the browser/tab becomes active.
+       */
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+
+      /*
+       * Don't let SWR deduplicate requests for too long.
+       */
+      dedupingInterval: 0,
+
+      /*
+       * Always revalidate stale data.
+       */
+      revalidateIfStale: true,
+
+      /*
+       * Don't keep retrying a failed request aggressively.
+       * The 15-second refresh will try again.
+       */
+      errorRetryCount: 1,
+      errorRetryInterval: 5000,
+    }
+  )
 
   const [mounted, setMounted] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
   const [localProgress, setLocalProgress] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const progressIntervalRef =
+    useRef<NodeJS.Timeout | null>(null)
+
   const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
     setMounted(true)
-    // Touch devices generally don't trigger hover, so the default "idle" disc position
-    // must be less negative on small screens to avoid clipping.
-    setIsCompact(window.matchMedia?.("(max-width: 640px)")?.matches ?? false)
+
+    setIsCompact(
+      window.matchMedia?.("(max-width: 640px)")?.matches ??
+        false
+    )
   }, [])
 
+  /*
+   * Keep the progress bar moving locally between API
+   * refreshes while Spotify says the track is playing.
+   */
   useEffect(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current)
+      progressIntervalRef.current = null
+    }
 
-    if (data?.isPlaying && data.progressMs !== null && data.durationMs !== null) {
+    if (
+      data?.isPlaying &&
+      data.progressMs !== null &&
+      data.durationMs !== null
+    ) {
       setLocalProgress(data.progressMs)
 
       progressIntervalRef.current = setInterval(() => {
-        setLocalProgress((prev) => {
-          const next = prev + 1000
-          if (data.durationMs && next >= data.durationMs) return data.durationMs
+        setLocalProgress((previous) => {
+          const next = previous + 1000
+
+          if (
+            data.durationMs &&
+            next >= data.durationMs
+          ) {
+            return data.durationMs
+          }
+
           return next
         })
       }, 1000)
@@ -65,41 +136,90 @@ export default function SpotifyGlassWidget() {
     }
 
     return () => {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+        progressIntervalRef.current = null
+      }
     }
-  }, [data?.isPlaying, data?.progressMs, data?.durationMs])
+  }, [
+    data?.isPlaying,
+    data?.progressMs,
+    data?.durationMs,
+  ])
 
+  /*
+   * Sync local progress whenever the API gives us
+   * a newer Spotify progress value.
+   */
   useEffect(() => {
-    if (data?.progressMs !== null && data?.isPlaying) {
+    if (
+      data?.progressMs !== null &&
+      data?.isPlaying
+    ) {
       setLocalProgress(data.progressMs)
     }
   }, [data?.progressMs, data?.isPlaying])
 
-  if (!mounted) return <SpotifyGlassSkeleton />
+  if (!mounted) {
+    return <SpotifyGlassSkeleton />
+  }
 
-  const hasData = !error && !!data && !!data.title
-  const isPlaying = data?.isPlaying ?? false
+  const hasData =
+    !error &&
+    !!data &&
+    !!data.title
+
+  const isPlaying =
+    data?.isPlaying ?? false
+
   const progress = localProgress
-  const duration = data?.durationMs ?? 0
-  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
 
-  const cardSize = isCompact ? "min(220px, 78vw)" : "240px"
-  const cdSize = isCompact ? "min(160px, 58vw)" : "180px"
-  const cdTopIdle = isCompact ? "-60px" : "-90px"
-  const cdTopHover = isCompact ? "20px" : "30px"
+  const duration =
+    data?.durationMs ?? 0
+
+  const progressPercent =
+    duration > 0
+      ? Math.min((progress / duration) * 100, 100)
+      : 0
+
+  const cardSize = isCompact
+    ? "min(220px, 78vw)"
+    : "240px"
+
+  const cdSize = isCompact
+    ? "min(160px, 58vw)"
+    : "180px"
+
+  const cdTopIdle = isCompact
+    ? "-60px"
+    : "-90px"
+
+  const cdTopHover = isCompact
+    ? "20px"
+    : "30px"
 
   return (
     <div className="flex w-full flex-col items-start">
-      {/* <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p> */}
-
       <motion.a
-        href={hasData ? data!.url : "https://open.spotify.com"}
+        href={
+          hasData
+            ? data.url
+            : "https://open.spotify.com"
+        }
         target="_blank"
         rel="noopener noreferrer"
         className="group relative block"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        initial={{
+          opacity: 0,
+          y: 10,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.3,
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -111,7 +231,7 @@ export default function SpotifyGlassWidget() {
             borderRadius: "32px",
           }}
         >
-          {/* Dynamic Background Layer */}
+          {/* Dynamic Background */}
           {data?.albumArt ? (
             <>
               <div
@@ -120,14 +240,17 @@ export default function SpotifyGlassWidget() {
                   backgroundImage: `url(${data.albumArt})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  filter: "blur(20px) brightness(0.4) saturate(1.2)",
+                  filter:
+                    "blur(20px) brightness(0.4) saturate(1.2)",
                   transform: "scale(1.1)",
                 }}
               />
+
               <div
                 className="absolute inset-0"
                 style={{
-                  background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.7) 100%)",
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.7) 100%)",
                 }}
               />
             </>
@@ -135,45 +258,52 @@ export default function SpotifyGlassWidget() {
             <div
               className="absolute inset-0"
               style={{
-                background: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%)",
+                background:
+                  "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%)",
               }}
             />
           )}
 
-          {/* macOS Liquid Glass Container */}
+          {/* Glass Container */}
           <div
             className="relative h-full w-full backdrop-blur-xl"
             style={{
               borderRadius: "32px",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              border:
+                "1px solid rgba(255, 255, 255, 0.1)",
               boxShadow: `
                 inset 0 1px 1px rgba(255, 255, 255, 0.15),
                 inset 0 -1px 1px rgba(0, 0, 0, 0.2),
                 0 4px 16px rgba(0, 0, 0, 0.2),
                 0 8px 32px rgba(0, 0, 0, 0.15)
               `,
-              background: "rgba(255, 255, 255, 0.03)",
+              background:
+                "rgba(255, 255, 255, 0.03)",
             }}
           >
-            {/* Inner highlight */}
+            {/* Inner Highlight */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 borderRadius: "32px",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                boxShadow: "inset 0 1px 2px rgba(255, 255, 255, 0.1)",
+                border:
+                  "1px solid rgba(255, 255, 255, 0.08)",
+                boxShadow:
+                  "inset 0 1px 2px rgba(255, 255, 255, 0.1)",
               }}
             />
 
-            {/* CD Container - Positioned higher, clipped by overflow */}
+            {/* CD */}
             <motion.div
               className="absolute left-1/2 -translate-x-1/2"
               style={{
-              width: cdSize,
-              height: cdSize,
+                width: cdSize,
+                height: cdSize,
               }}
               animate={{
-              top: isHovered ? cdTopHover : cdTopIdle,
+                top: isHovered
+                  ? cdTopHover
+                  : cdTopIdle,
               }}
               transition={{
                 duration: 0.6,
@@ -189,11 +319,15 @@ export default function SpotifyGlassWidget() {
                 }
                 transition={{
                   duration: 5,
-                  repeat: isPlaying && !shouldReduceMotion ? Infinity : 0,
+                  repeat:
+                    isPlaying && !shouldReduceMotion
+                      ? Infinity
+                      : 0,
                   ease: "linear",
                 }}
                 style={{
-                  transformOrigin: "center center",
+                  transformOrigin:
+                    "center center",
                 }}
               >
                 <div
@@ -228,7 +362,7 @@ export default function SpotifyGlassWidget() {
                     />
                   )}
 
-                  {/* Vinyl-like gradient overlay */}
+                  {/* Vinyl overlay */}
                   <div
                     className="absolute inset-0 rounded-full"
                     style={{
@@ -271,13 +405,16 @@ export default function SpotifyGlassWidget() {
                           "radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.3) 65%, rgba(0, 0, 0, 0.25) 70%, transparent 75%)",
                       }}
                     />
+
                     <div
                       className="relative rounded-full"
                       style={{
                         width: "28px",
                         height: "28px",
-                        background: "rgba(0, 0, 0, 0.6)",
-                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.5)",
+                        background:
+                          "rgba(0, 0, 0, 0.6)",
+                        boxShadow:
+                          "inset 0 2px 4px rgba(0, 0, 0, 0.5)",
                       }}
                     />
                   </div>
@@ -286,7 +423,8 @@ export default function SpotifyGlassWidget() {
                     <div
                       className="absolute inset-0 rounded-full"
                       style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.4)",
+                        backgroundColor:
+                          "rgba(0, 0, 0, 0.4)",
                         backdropFilter: "blur(1px)",
                       }}
                     />
@@ -295,18 +433,23 @@ export default function SpotifyGlassWidget() {
               </motion.div>
             </motion.div>
 
-            {/* Progressive blur overlay behind text on hover */}
+            {/* Progressive blur */}
             <motion.div
               className="absolute left-0 right-0 pointer-events-none"
               style={{
                 bottom: 0,
                 height: "120px",
-                borderRadius: "0 0 32px 32px",
-                maskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
+                borderRadius:
+                  "0 0 32px 32px",
+                maskImage:
+                  "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to top, black 0%, black 40%, transparent 100%)",
               }}
               animate={{
-                backdropFilter: isHovered ? "blur(20px)" : "blur(8px)",
+                backdropFilter: isHovered
+                  ? "blur(20px)"
+                  : "blur(8px)",
                 opacity: isHovered ? 1 : 0.6,
               }}
               transition={{
@@ -314,19 +457,23 @@ export default function SpotifyGlassWidget() {
                 ease: [0.4, 0, 0.2, 1],
               }}
             />
-            
-            {/* Additional progressive blur layer for smoother transition */}
+
             <motion.div
               className="absolute left-0 right-0 pointer-events-none"
               style={{
                 bottom: 0,
                 height: "100px",
-                borderRadius: "0 0 32px 32px",
-                maskImage: "linear-gradient(to top, black 0%, transparent 70%)",
-                WebkitMaskImage: "linear-gradient(to top, black 0%, transparent 70%)",
+                borderRadius:
+                  "0 0 32px 32px",
+                maskImage:
+                  "linear-gradient(to top, black 0%, transparent 70%)",
+                WebkitMaskImage:
+                  "linear-gradient(to top, black 0%, transparent 70%)",
               }}
               animate={{
-                backdropFilter: isHovered ? "blur(16px)" : "blur(6px)",
+                backdropFilter: isHovered
+                  ? "blur(16px)"
+                  : "blur(6px)",
                 opacity: isHovered ? 0.8 : 0.4,
               }}
               transition={{
@@ -335,7 +482,7 @@ export default function SpotifyGlassWidget() {
               }}
             />
 
-            {/* Text Content - Animated on hover */}
+            {/* Text */}
             <motion.div
               className="absolute left-0 right-0 text-center z-10"
               style={{
@@ -350,13 +497,17 @@ export default function SpotifyGlassWidget() {
                 ease: [0.4, 0, 0.2, 1],
               }}
             >
-              {/* Sound wave icon - fades out on hover */}
+              {/* Sound wave */}
               <motion.div
                 className="flex items-center justify-center gap-0.5 mb-3"
                 animate={{
                   opacity: isHovered ? 0 : 1,
-                  height: isHovered ? 0 : "auto",
-                  marginBottom: isHovered ? 0 : "12px",
+                  height: isHovered
+                    ? 0
+                    : "auto",
+                  marginBottom: isHovered
+                    ? 0
+                    : "12px",
                 }}
                 transition={{
                   duration: 0.4,
@@ -366,35 +517,56 @@ export default function SpotifyGlassWidget() {
                   overflow: "hidden",
                 }}
               >
-                <div className="w-0.5 bg-white/60 rounded-full" style={{ height: "8px" }} />
-                <div className="w-0.5 bg-white/80 rounded-full" style={{ height: "12px" }} />
-                <div className="w-0.5 bg-white rounded-full" style={{ height: "16px" }} />
+                <div
+                  className="w-0.5 bg-white/60 rounded-full"
+                  style={{ height: "8px" }}
+                />
+                <div
+                  className="w-0.5 bg-white/80 rounded-full"
+                  style={{ height: "12px" }}
+                />
+                <div
+                  className="w-0.5 bg-white rounded-full"
+                  style={{ height: "16px" }}
+                />
               </motion.div>
 
-              {/* Track name - primary */}
+              {/* Track */}
               <h3
                 className="text-sm font-semibold text-white mb-1 truncate px-2"
-                style={{ lineHeight: "1.3" }}
+                style={{
+                  lineHeight: "1.3",
+                }}
               >
-                {hasData ? data!.title : "Last played"}
+                {hasData
+                  ? data.title
+                  : "Last played"}
               </h3>
 
-              {/* Artist name - secondary */}
+              {/* Artist */}
               <p
                 className="text-xs text-white/70 font-light mb-3"
-                style={{ lineHeight: "1.2" }}
+                style={{
+                  lineHeight: "1.2",
+                }}
               >
-                {hasData ? data!.artist : "Not playing"}
+                {hasData
+                  ? data.artist
+                  : "Not playing"}
               </p>
 
-              {/* Progress bar and time - fades out on hover */}
+              {/* Progress */}
               {hasData && duration > 0 && (
                 <motion.div
                   className="flex items-center gap-2 px-2"
                   animate={{
                     opacity: isHovered ? 0 : 1,
-                    height: isHovered ? 0 : "auto",
-                    marginTop: isHovered ? 0 : "0px",
+                    height: isHovered
+                      ? 0
+                      : "auto",
+                    marginTop: isHovered
+                      ? 0
+                      : "0px",
                   }}
                   transition={{
                     duration: 0.4,
@@ -410,16 +582,24 @@ export default function SpotifyGlassWidget() {
 
                   <div
                     className="flex-1 h-px bg-white/20 rounded-full overflow-hidden relative"
-                    style={{ minWidth: "80px" }}
+                    style={{
+                      minWidth: "80px",
+                    }}
                   >
                     <motion.div
                       className="h-full bg-white rounded-full absolute top-0 left-0"
                       style={{
-                        boxShadow: "0 0 2px rgba(255, 255, 255, 0.5)",
+                        boxShadow:
+                          "0 0 2px rgba(255, 255, 255, 0.5)",
                       }}
                       initial={false}
-                      animate={{ width: `${progressPercent}%` }}
-                      transition={{ duration: 0.3, ease: "linear" }}
+                      animate={{
+                        width: `${progressPercent}%`,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        ease: "linear",
+                      }}
                     />
                   </div>
 
@@ -454,8 +634,6 @@ export default function SpotifyGlassWidget() {
 function SpotifyGlassSkeleton() {
   return (
     <div className="flex w-full flex-col items-start">
-      {/* <p className="text-xs text-gray-400 mb-3 font-light tracking-wide">Currently I'm Listening</p> */}
-
       <div
         className="relative overflow-hidden animate-pulse"
         style={{
@@ -467,21 +645,25 @@ function SpotifyGlassSkeleton() {
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%)",
+            background:
+              "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 50%, #0a0a0a 100%)",
           }}
         />
+
         <div
           className="relative h-full w-full backdrop-blur-xl"
           style={{
             borderRadius: "32px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            border:
+              "1px solid rgba(255, 255, 255, 0.1)",
             boxShadow: `
               inset 0 1px 1px rgba(255, 255, 255, 0.15),
               inset 0 -1px 1px rgba(0, 0, 0, 0.2),
               0 4px 16px rgba(0, 0, 0, 0.2),
               0 8px 32px rgba(0, 0, 0, 0.15)
             `,
-            background: "rgba(255, 255, 255, 0.03)",
+            background:
+              "rgba(255, 255, 255, 0.03)",
           }}
         />
       </div>

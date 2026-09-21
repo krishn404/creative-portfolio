@@ -1,7 +1,3 @@
-/**
- * Spotify API utilities for token management and API calls
- */
-
 interface SpotifyTokenResponse {
   access_token: string
   token_type: string
@@ -16,28 +12,16 @@ interface SpotifyNowPlayingResponse {
   item: {
     name: string
     duration_ms: number
-    artists: Array<{ name: string }>
+    artists: Array<{
+      name: string
+    }>
     album: {
       name: string
-      images: Array<{ url: string; height: number; width: number }>
-    }
-    external_urls: {
-      spotify: string
-    }
-  } | null
-  timestamp: number
-}
-
-interface SpotifyPlayerResponse {
-  is_playing: boolean
-  progress_ms: number
-  item: {
-    name: string
-    duration_ms: number
-    artists: Array<{ name: string }>
-    album: {
-      name: string
-      images: Array<{ url: string; height: number; width: number }>
+      images: Array<{
+        url: string
+        height: number
+        width: number
+      }>
     }
     external_urls: {
       spotify: string
@@ -50,10 +34,16 @@ interface SpotifyRecentlyPlayedResponse {
   items: Array<{
     track: {
       name: string
-      artists: Array<{ name: string }>
+      artists: Array<{
+        name: string
+      }>
       album: {
         name: string
-        images: Array<{ url: string; height: number; width: number }>
+        images: Array<{
+          url: string
+          height: number
+          width: number
+        }>
       }
       external_urls: {
         spotify: string
@@ -76,7 +66,7 @@ export interface SpotifyStatus {
 }
 
 /**
- * Get access token using refresh token
+ * Get a fresh Spotify access token using the refresh token.
  */
 export async function getAccessToken(): Promise<string> {
   const clientId = process.env.SPOTIFY_CLIENT_ID
@@ -84,174 +74,264 @@ export async function getAccessToken(): Promise<string> {
   const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN
 
   if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error("Missing Spotify credentials in environment variables")
+    throw new Error(
+      "Missing Spotify credentials in environment variables"
+    )
   }
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
-  })
+  const response = await fetch(
+    "https://accounts.spotify.com/api/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(
+          `${clientId}:${clientSecret}`
+        ).toString("base64")}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+      cache: "no-store",
+    }
+  )
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Failed to refresh token: ${error}`)
+
+    throw new Error(
+      `Failed to refresh Spotify token: ${error}`
+    )
   }
 
-  const data: SpotifyTokenResponse = await response.json()
+  const data: SpotifyTokenResponse =
+    await response.json()
+
   return data.access_token
 }
 
 /**
- * Get current playing track or last played track
+ * Get the current Spotify track.
+ *
+ * Returns:
+ * - Spotify track when something is playing
+ * - Spotify recently played when nothing is currently playing
+ * - null only when Spotify itself is unavailable
+ *
+ * Last.fm is NOT handled here.
+ * The API route handles the Last.fm fallback.
  */
 export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
   try {
     const accessToken = await getAccessToken()
 
-    // First, try to get currently playing track
-    const nowPlayingResponse = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
+    const nowPlayingResponse = await fetch(
+      "https://api.spotify.com/v1/me/player/currently-playing",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: "no-store",
+      }
+    )
 
+    console.log(
+      "Spotify currently-playing status:",
+      nowPlayingResponse.status
+    )
+
+    /**
+     * 204 means Spotify is working.
+     * There is simply no track currently playing.
+     *
+     * This is NOT a Spotify failure.
+     */
     if (nowPlayingResponse.status === 204) {
-      // No content - nothing is playing, fetch recently played
       return await getLastPlayed(accessToken)
     }
 
+    /**
+     * Spotify responded successfully.
+     */
     if (nowPlayingResponse.ok) {
-      const data: SpotifyNowPlayingResponse = await nowPlayingResponse.json()
-      
-      if (data.item) {
-        return {
-          isPlaying: data.is_playing,
-          title: data.item.name,
-          artist: data.item.artists.map((a) => a.name).join(", "),
-          album: data.item.album.name,
-          albumArt: data.item.album.images[0]?.url || "",
-          url: data.item.external_urls.spotify,
-          playedAt: data.timestamp,
-          progressMs: data.progress_ms || null,
-          durationMs: data.item.duration_ms || null,
-        }
-      }
-    }
-
-    // Some accounts/contexts are more reliable through /me/player.
-    const playerResponse = await fetch("https://api.spotify.com/v1/me/player", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-
-    if (playerResponse.ok) {
-      const data: SpotifyPlayerResponse = await playerResponse.json()
+      const data: SpotifyNowPlayingResponse =
+        await nowPlayingResponse.json()
 
       if (data.item) {
         return {
           isPlaying: data.is_playing,
           title: data.item.name,
-          artist: data.item.artists.map((a) => a.name).join(", "),
+          artist: data.item.artists
+            .map((artist) => artist.name)
+            .join(", "),
           album: data.item.album.name,
-          albumArt: data.item.album.images[0]?.url || "",
+          albumArt:
+            data.item.album.images[0]?.url || "",
           url: data.item.external_urls.spotify,
           playedAt: data.timestamp,
-          progressMs: data.progress_ms || null,
-          durationMs: data.item.duration_ms || null,
+          progressMs: data.progress_ms ?? null,
+          durationMs:
+            data.item.duration_ms ?? null,
         }
       }
+
+      /**
+       * Spotify is healthy but has no current item.
+       * Use Spotify's recently played history.
+       */
+      return await getLastPlayed(accessToken)
     }
 
-    // If currently playing fails, try recently played
-    return await getLastPlayed(accessToken)
+    /**
+     * Spotify itself failed.
+     *
+     * Returning null tells the API route that it is
+     * allowed to use Last.fm.
+     */
+    const errorBody = await nowPlayingResponse.text()
+
+    console.error(
+      "Spotify currently-playing failed:",
+      nowPlayingResponse.status,
+      errorBody
+    )
+
+    return null
   } catch (error) {
-    console.error("Error fetching Spotify status:", error)
+    console.error(
+      "Spotify status failed:",
+      error
+    )
+
     return null
   }
 }
 
 /**
- * Get last played track
+ * Get the most recently played Spotify track.
  */
-async function getLastPlayed(accessToken: string): Promise<SpotifyStatus | null> {
+async function getLastPlayed(
+  accessToken: string
+): Promise<SpotifyStatus | null> {
   try {
-    const response = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
+    const response = await fetch(
+      "https://api.spotify.com/v1/me/player/recently-played?limit=1",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: "no-store",
+      }
+    )
+
+    console.log(
+      "Spotify recently-played status:",
+      response.status
+    )
 
     if (!response.ok) {
-      console.error("Failed to fetch recently played track:", response.status, await response.text())
+      const errorBody = await response.text()
+
+      console.error(
+        "Failed to fetch Spotify recently played:",
+        response.status,
+        errorBody
+      )
+
       return null
     }
 
-    const data: SpotifyRecentlyPlayedResponse = await response.json()
+    const data: SpotifyRecentlyPlayedResponse =
+      await response.json()
 
-    if (data.items && data.items.length > 0) {
-      const item = data.items[0]
-      return {
-        isPlaying: false,
-        title: item.track.name,
-        artist: item.track.artists.map((a) => a.name).join(", "),
-        album: item.track.album.name,
-        albumArt: item.track.album.images[0]?.url || "",
-        url: item.track.external_urls.spotify,
-        playedAt: new Date(item.played_at).getTime(),
-        progressMs: null,
-        durationMs: null,
-      }
+    if (!data.items?.length) {
+      return null
     }
 
-    return null
+    const item = data.items[0]
+
+    return {
+      isPlaying: false,
+      title: item.track.name,
+      artist: item.track.artists
+        .map((artist) => artist.name)
+        .join(", "),
+      album: item.track.album.name,
+      albumArt:
+        item.track.album.images[0]?.url || "",
+      url: item.track.external_urls.spotify,
+      playedAt: new Date(
+        item.played_at
+      ).getTime(),
+      progressMs: null,
+      durationMs: null,
+    }
   } catch (error) {
-    console.error("Error fetching last played track:", error)
+    console.error(
+      "Error fetching Spotify recently played:",
+      error
+    )
+
     return null
   }
 }
 
 /**
- * Exchange authorization code for tokens
+ * Exchange Spotify authorization code for tokens.
  */
-export async function exchangeCodeForTokens(code: string): Promise<{ accessToken: string; refreshToken: string }> {
+export async function exchangeCodeForTokens(
+  code: string
+): Promise<{
+  accessToken: string
+  refreshToken: string
+}> {
   const clientId = process.env.SPOTIFY_CLIENT_ID
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
   const redirectUri = process.env.SPOTIFY_REDIRECT_URI
 
   if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Missing Spotify credentials in environment variables")
+    throw new Error(
+      "Missing Spotify credentials in environment variables"
+    )
   }
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-    },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: redirectUri,
-    }),
-  })
+  const response = await fetch(
+    "https://accounts.spotify.com/api/token",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(
+          `${clientId}:${clientSecret}`
+        ).toString("base64")}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+      }),
+      cache: "no-store",
+    }
+  )
 
   if (!response.ok) {
     const error = await response.text()
-    throw new Error(`Failed to exchange code: ${error}`)
+
+    throw new Error(
+      `Failed to exchange Spotify code: ${error}`
+    )
   }
 
-  const data: SpotifyTokenResponse = await response.json()
+  const data: SpotifyTokenResponse =
+    await response.json()
 
   if (!data.refresh_token) {
-    throw new Error("No refresh token received")
+    throw new Error(
+      "No Spotify refresh token received"
+    )
   }
 
   return {
@@ -259,4 +339,3 @@ export async function exchangeCodeForTokens(code: string): Promise<{ accessToken
     refreshToken: data.refresh_token,
   }
 }
-

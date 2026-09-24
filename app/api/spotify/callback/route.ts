@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
   <div class="container">
     <div class="success-icon">✅</div>
     <h1>Authorization Successful!</h1>
-    <p class="message">Your Spotify account has been authorized. Copy the refresh token below and add it to your <code>.env.local</code> file.</p>
+    <p class="message">Your Spotify account has been authorized. Copy the refresh token below and save it as <code>SPOTIFY_REFRESH_TOKEN</code>. For Vercel, update it under Project Settings → Environment Variables, select Production, then redeploy.</p>
     
     <div class="token-container">
       <div class="token-label">Refresh Token</div>
@@ -223,10 +223,10 @@ export async function GET(request: NextRequest) {
       <h3>📝 Next Steps:</h3>
       <ol>
         <li>Copy the refresh token above</li>
-        <li>Open your <code>.env.local</code> file in the project root</li>
-        <li>Add or update this line: <code>SPOTIFY_REFRESH_TOKEN=your_token_here</code></li>
-        <li>Restart your development server</li>
-        <li>The Spotify widget should now work on your portfolio!</li>
+        <li>For local development, add it to <code>.env.local</code> and restart the development server.</li>
+        <li>For production, update <code>SPOTIFY_REFRESH_TOKEN</code> in Vercel Project Settings → Environment Variables for Production.</li>
+        <li>Redeploy the production deployment so it picks up the new value.</li>
+        <li>Keep the refresh token private.</li>
       </ol>
     </div>
   </div>

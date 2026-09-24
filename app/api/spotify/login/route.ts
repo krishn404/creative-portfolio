@@ -22,6 +22,9 @@ export async function GET() {
     response_type: "code",
     redirect_uri: redirectUri,
     scope: scopes,
+    // Force Spotify to show the authorization screen again so a
+    // newly issued refresh token can be copied into deployment env.
+    show_dialog: "true",
   })
 
   const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`

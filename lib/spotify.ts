@@ -120,8 +120,7 @@ export async function getAccessToken(): Promise<string> {
  * - Spotify recently played when nothing is currently playing
  * - null only when Spotify itself is unavailable
  *
- * Last.fm is NOT handled here.
- * The API route handles the Last.fm fallback.
+ * The music widget never substitutes Last.fm data.
  */
 export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
   try {
@@ -187,8 +186,8 @@ export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
     /**
      * Spotify itself failed.
      *
-     * Returning null tells the API route that it is
-     * allowed to use Last.fm.
+     * Returning null tells the API route Spotify is
+     * unavailable so it can ask the user to reconnect.
      */
     const errorBody = await nowPlayingResponse.text()
 

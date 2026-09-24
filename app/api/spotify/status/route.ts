@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
 import { getSpotifyStatus } from "@/lib/spotify"
-import { getLastFmStatus } from "@/lib/lastfm"
 import { SITE_URL } from "@/lib/seo/constants"
 
 type MusicStatus = Awaited<
@@ -51,8 +50,7 @@ export async function GET() {
     /*
      * Spotify is working.
      *
-     * This immediately replaces any previously cached
-     * Last.fm response.
+     * Keep only Spotify responses in the cache.
      */
     if (spotifyStatus) {
       cache = {
@@ -72,50 +70,14 @@ export async function GET() {
     }
 
     /*
-     * =========================================================
-     * 2. SPOTIFY FAILED -> TRY LAST.FM
-     * =========================================================
-     */
-    console.warn(
-      "Spotify unavailable. Falling back to Last.fm."
-    )
-
-    const lastFmStatus =
-      await getLastFmStatus()
-
-    if (lastFmStatus) {
-      cache = {
-        data: lastFmStatus,
-        timestamp: now,
-      }
-
-      return NextResponse.json(
-        lastFmStatus,
-        {
-          headers: {
-            "Cache-Control":
-              "no-store, max-age=0",
-          },
-        }
-      )
-    }
-
-    /*
-     * =========================================================
-     * 3. BOTH SOURCES FAILED
-     * =========================================================
-     *
-     * Do NOT return an old successful status.
-     *
-     * This is important because an old Last.fm result must
-     * not remain visible after Spotify becomes available again.
+     * Spotify is unavailable. Never substitute another
+     * listening-history provider in this Spotify widget.
      */
     return NextResponse.json(
       {
         isPlaying: false,
-        title: "No recent playback found",
-        artist:
-          "Connect Spotify Premium or set Last.fm API env vars",
+        title: "Reconnect Spotify",
+        artist: "Spotify playback is currently unavailable",
         album: "",
         albumArt: "",
         url: `${SITE_URL}/api/spotify/login`,

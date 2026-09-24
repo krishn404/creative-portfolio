@@ -48,8 +48,8 @@ export default function SpotifyGlassWidget() {
     fetcher,
     {
       /*
-       * The API itself decides:
-       * Spotify -> Last.fm fallback.
+       * The API returns Spotify playback only. If Spotify is
+       * unavailable, it prompts the user to reconnect Spotify.
        *
        * Poll frequently enough to detect when Spotify
        * becomes available again.

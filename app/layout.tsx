@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Archivo, DM_Sans, Geist, Geist_Mono, Instrument_Serif, Space_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import GradualBlur from "@/components/GradualBlur"
+import RouteAwareGradualBlur from "@/components/route-aware-gradual-blur"
 import { buildMetadata } from "@/lib/seo/metadata"
 import "./globals.css"
 
@@ -46,17 +46,7 @@ export default function RootLayout({
         className={`relative min-h-screen font-sans antialiased ${archivo.variable} ${dmSans.variable} ${spaceMono.variable}`}
       >
         {children}
-        <GradualBlur
-          target="page"
-          position="bottom"
-          height="6rem"
-          strength={2}
-          divCount={5}
-          curve="bezier"
-          exponential
-          opacity={1}
-          zIndex={50}
-        />
+        <RouteAwareGradualBlur />
         <Analytics />
       </body>
     </html>

@@ -4,6 +4,11 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import Image from "next/image"
 import { useIsMobile } from "@/hooks/use-mobile"
+import {
+  HERO_STICKER_MOVE_DURATION,
+  HERO_STICKER_START_DELAY,
+  HERO_STICKER_STAGGER,
+} from "@/components/hero-intro-timing"
 
 interface StickerPosition {
   x: number // percentage
@@ -89,7 +94,7 @@ function Sticker({ src, index, position }: StickerProps) {
     const timer = setTimeout(() => {
       x.set(finalPos.x)
       y.set(finalPos.y)
-    }, 600 + index * 150) // Stagger delay: 600ms base + 150ms per sticker
+    }, (HERO_STICKER_START_DELAY + index * HERO_STICKER_STAGGER) * 1000)
     
     return () => clearTimeout(timer)
   }, [getPixelPosition, getCenterPosition, x, y, index])
@@ -106,10 +111,10 @@ function Sticker({ src, index, position }: StickerProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsIntroComplete(true)
-    }, 600 + (STICKER_POSITIONS.length * 150) + 1200) // Base delay + stagger + animation duration
+    }, (HERO_STICKER_START_DELAY + index * HERO_STICKER_STAGGER + HERO_STICKER_MOVE_DURATION) * 1000)
     
     return () => clearTimeout(timer)
-  }, [])
+  }, [index])
   
   // Rotation with subtle spring - start at 0, animate to final rotation
   const rotation = useMotionValue(0)
@@ -119,7 +124,7 @@ function Sticker({ src, index, position }: StickerProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       rotation.set(activePosition.rotation)
-    }, 600 + index * 150) // Same stagger as position animation
+    }, (HERO_STICKER_START_DELAY + index * HERO_STICKER_STAGGER) * 1000)
     
     return () => clearTimeout(timer)
   }, [activePosition.rotation, index, rotation])
@@ -202,8 +207,8 @@ function Sticker({ src, index, position }: StickerProps) {
         opacity: 1, 
         scale: responsiveScale,
         transition: { 
-          duration: 0.8,
-          delay: 0.4 + index * 0.15,
+          duration: 0.7,
+          delay: HERO_STICKER_START_DELAY + index * HERO_STICKER_STAGGER,
           ease: [0.23, 1, 0.32, 1]
         }
       }}
@@ -259,4 +264,3 @@ export default function Stickers() {
     </div>
   )
 }
-

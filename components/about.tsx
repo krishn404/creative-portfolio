@@ -21,7 +21,7 @@ const workedFor: LogoItem[] = [
   { src: "/marquee/bypolar.png", alt: "Bypolar", title: "Bypolar" },
   // { src: "/marquee/dl91.png", alt: "DL91", title: "DL91" },
   { src: "/marquee/montage.png", alt: "Montage", title: "Montage" },
-  // { src: "/marquee/oriole.png", alt: "Oriole", title: "Oriole" },
+  { src: "/marquee/oriole.png", alt: "Oriole", title: "Oriole" },
 ]
 
 export default function About() {

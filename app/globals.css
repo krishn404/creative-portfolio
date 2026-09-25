@@ -323,8 +323,25 @@ body.hide-page-blur .gradual-blur-page {
 
 .blog-prose blockquote {
   border-left: 3px solid var(--accent-neon);
-  font-family: var(--font-mono);
+  font-family: inherit;
   font-style: normal;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Tailwind Typography adds quotation marks to blockquotes by default. */
+.blog-prose blockquote p:first-of-type::before,
+.blog-prose blockquote p:last-of-type::after {
+  content: none;
+}
+
+.blog-prose blockquote p {
+  font-weight: 400;
+}
+
+.blog-prose strong,
+.blog-prose b {
+  font-weight: 700;
 }
 
 .blog-prose hr {

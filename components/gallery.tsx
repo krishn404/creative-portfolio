@@ -24,8 +24,13 @@ const getWorkMedia = (work: WorkItem): MediaAsset[] => {
 }
 
 const getCloudinaryPlaceholder = (url: string) => {
-  if (!url.includes("/upload/")) return url
+  if (!url.includes("/upload/")) return null
   return url.replace("/upload/", "/upload/f_auto,q_10,w_96,e_blur:800/")
+}
+
+const getOptimizedImage = (url: string, width: number) => {
+  if (!url.includes("/upload/")) return url
+  return url.replace("/upload/", `/upload/f_auto,q_auto:good,w_${width}/`)
 }
 
 function ProgressiveImage({
@@ -35,6 +40,7 @@ function ProgressiveImage({
   imgClassName,
   imageStyle,
   priority = false,
+  imageWidth = 1200,
   onClick,
   draggable = false,
 }: {
@@ -44,6 +50,7 @@ function ProgressiveImage({
   imgClassName?: string
   imageStyle?: CSSProperties
   priority?: boolean
+  imageWidth?: number
   onClick?: () => void
   draggable?: boolean
 }) {
@@ -53,38 +60,27 @@ function ProgressiveImage({
   useEffect(() => {
     setLoaded(false)
     setHasError(false)
-
-    const img = new window.Image()
-    img.src = src
-    img.onload = () => setLoaded(true)
-    img.onerror = () => {
-      setHasError(true)
-      setLoaded(true)
-    }
-
-    return () => {
-      img.onload = null
-      img.onerror = null
-    }
   }, [src])
 
   return (
     <div className={`relative overflow-hidden bg-muted ${className ?? ""}`} onClick={onClick}>
-      <img
-        src={getCloudinaryPlaceholder(src)}
-        alt=""
-        aria-hidden="true"
-        className={`absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-300 ${
-          loaded ? "opacity-0" : "opacity-100"
-        }`}
-      />
+      {getCloudinaryPlaceholder(src) ? (
+        <img
+          src={getCloudinaryPlaceholder(src) ?? undefined}
+          alt=""
+          aria-hidden="true"
+          className={`absolute inset-0 h-full w-full scale-110 object-cover blur-2xl transition-opacity duration-300 ${
+            loaded ? "opacity-0" : "opacity-100"
+          }`}
+        />
+      ) : null}
       <div
         className={`absolute inset-0 bg-gradient-to-br from-muted via-muted/70 to-background/10 transition-opacity duration-300 ${
           loaded ? "opacity-0" : "opacity-100"
         }`}
       />
       <img
-        src={src}
+        src={getOptimizedImage(src, imageWidth)}
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
@@ -325,6 +321,44 @@ export default function Gallery() {
             ))}
           </div>
 
+          {/* {!isLoading && filtered.length > 0 ? (
+            <div className="mb-10 hidden h-[clamp(220px,32vw,390px)] gap-2 overflow-hidden rounded-3xl border border-border bg-card p-2 md:flex" aria-label="Featured work carousel">
+              {filtered.slice(0, 6).map((work, index) => {
+                const active = hoveredWorkId === work.id
+                return (
+                  <motion.button
+                    key={`flex-${work.id}`}
+                    type="button"
+                    aria-label={`Open project ${work.title}`}
+                    onClick={() => openWork(work)}
+                    onMouseEnter={() => setHoveredWorkId(work.id)}
+                    onMouseLeave={() => setHoveredWorkId(null)}
+                    onFocus={() => setHoveredWorkId(work.id)}
+                    onBlur={() => setHoveredWorkId(null)}
+                    animate={{ flexGrow: active ? 4 : 1 }}
+                    transition={{ type: "spring", stiffness: 180, damping: 24 }}
+                    className="group relative min-w-0 flex-1 overflow-hidden rounded-2xl text-left"
+                  >
+                    <ProgressiveImage
+                      src={getDisplayMedia(work, active)}
+                      alt={work.title}
+                      imageWidth={900}
+                      className="h-full w-full"
+                      imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                      priority={index < 2}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" />
+                    <div className={`absolute inset-x-0 bottom-0 p-4 text-white transition-opacity ${active ? "opacity-100" : "opacity-0"}`}>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">{displayWorkCategory(work.category)}{work.year ? ` · ${work.year}` : ""}</p>
+                      <p className="mt-1 line-clamp-1 text-lg">{work.title}</p>
+                    </div>
+                    {!active ? <span className="absolute bottom-4 left-1/2 max-w-[80%] -translate-x-1/2 truncate text-xs text-white drop-shadow-md">{String(index + 1).padStart(2, "0")}</span> : null}
+                  </motion.button>
+                )
+              })}
+            </div>
+          ) : null} */}
+
           {isLoading ? (
             <p className="text-muted-foreground">Loading selected work…</p>
           ) : (
@@ -491,6 +525,7 @@ export default function Gallery() {
                                   <ProgressiveImage
                                     src={asset.url}
                                     alt={`${selectedWork.title} thumbnail ${index + 1}`}
+                                    imageWidth={240}
                                     className="aspect-square"
                                     imgClassName="h-full w-full object-cover"
                                   />
@@ -563,8 +598,9 @@ export default function Gallery() {
                                 <ProgressiveImage
                                   src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
                                   alt={`${selectedWork.title} image ${activeMediaIndex + 1}`}
-                                  className="flex max-h-full w-full items-center justify-center rounded-2xl"
-                                  imgClassName="mx-auto max-h-full w-auto max-w-full object-contain"
+                                  className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/30"
+                                  imgClassName="mx-auto h-auto max-h-full w-auto max-w-full object-contain"
+                                  imageWidth={1800}
                                   onClick={() => setIsImageModalOpen(true)}
                                 />
                               </motion.div>
@@ -613,8 +649,9 @@ export default function Gallery() {
                           <ProgressiveImage
                             src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
                             alt={`${selectedWork.title} expanded image ${activeMediaIndex + 1}`}
-                            className="flex h-full w-full items-center justify-center rounded-2xl"
-                            imgClassName="mx-auto max-h-full w-auto max-w-full object-contain"
+                            className="flex h-full w-full items-center justify-center rounded-2xl bg-black/20"
+                            imgClassName="mx-auto h-auto max-h-[calc(100vh-4rem)] w-auto max-w-full object-contain"
+                            imageWidth={2000}
                           />
                         </div>
                       </motion.div>

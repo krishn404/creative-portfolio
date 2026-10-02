@@ -1,0 +1,93 @@
+.dome-page {
+  --dome-ink: #eae8e0;
+  --dome-muted: #83827e;
+  height: 100svh;
+  overflow: hidden;
+  padding: 0;
+  background: #050505;
+  color: var(--dome-ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.dome-header, .dome-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dome-header { position: absolute; z-index: 4; inset: 0 0 auto; height: 62px; padding: 0 26px; border-bottom: 1px solid rgb(255 255 255 / .08); background: linear-gradient(#090909b8, #09090900); pointer-events: none; }
+.dome-header a { pointer-events: auto; }
+.dome-brand { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-decoration: none; color: inherit; }
+.dome-brand span { margin-left: 10px; color: var(--dome-muted); font-size: 9px; font-weight: 400; letter-spacing: .17em; }
+.dome-collection, .dome-back-link, .dome-footer { font-size: 9px; letter-spacing: .16em; }
+.dome-collection { display: flex; align-items: center; gap: 9px; color: #c4c2bb; }
+.dome-collection i { color: #737373; font-style: normal; }
+.dome-back-link { color: #c9c7c0; text-decoration: none; transition: color .2s ease; }
+.dome-back-link:hover { color: white; }
+.dome-color-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid rgb(255 255 255 / .18); border-radius: 18px; background: rgb(8 8 8 / .62); backdrop-filter: blur(10px); color: #dedbd3; font: inherit; font-size: 9px; letter-spacing: .13em; white-space: nowrap; cursor: pointer; pointer-events: auto; transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.dome-color-toggle:hover { border-color: rgb(255 255 255 / .48); background: rgb(28 28 28 / .82); color: #fff; }
+.dome-color-toggle:focus-visible { outline: 2px solid #eee9dc; outline-offset: 3px; }
+.dome-color-swatch { width: 10px; height: 10px; flex: none; border: 1px solid rgb(255 255 255 / .45); border-radius: 50%; background: linear-gradient(135deg, #f0eee7 50%, #151515 50%); }
+.dome-color-toggle.is-original .dome-color-swatch { background: conic-gradient(#e98b67, #e6cc69, #82b797, #7ba8d2, #d78db5, #e98b67); }
+
+.dome-intro { display: flex; align-items: end; justify-content: space-between; gap: 36px; max-width: 1320px; margin: clamp(45px, 8vh, 94px) auto 28px; }
+.dome-eyebrow { margin: 0 0 14px; color: #8b8982; font-size: 9px; letter-spacing: .21em; }
+.dome-intro h1 { margin: 0; font-size: clamp(42px, 6.5vw, 88px); line-height: .95; font-weight: 400; letter-spacing: -.065em; }
+.dome-intro h1 i { color: #b9a68d; font-family: Georgia, serif; font-weight: 400; }
+.dome-description { max-width: 300px; margin: 0 2vw 5px 0; color: #aaa8a1; font-size: 13px; line-height: 1.7; }
+
+.dome-stage { position: relative; width: 100vw; height: 100svh; min-height: 0; margin: 0 auto; overflow: hidden; border: 0; border-radius: 0; background: #0a0a0a; cursor: grab; isolation: isolate; }
+.dome-stage.is-dragging { cursor: grabbing; }
+.dome-stage > div:has(> canvas) { position: absolute !important; inset: 0; }
+.dome-stage canvas { display: block; width: 100% !important; height: 100% !important; outline: 0; }
+.dome-canvas-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #77756e; font-size: 11px; letter-spacing: .16em; }
+.dome-stage-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: transparent; }
+.dome-counter { position: absolute; z-index: 2; bottom: 23px; left: 26px; padding: 7px 10px; border: 1px solid rgb(255 255 255 / .15); border-radius: 13px; background: rgb(8 8 8 / .72); backdrop-filter: blur(12px); color: #f0eee7; font-family: Georgia, serif; font-size: 25px; letter-spacing: -.04em; pointer-events: none; }
+.dome-counter span { display: block; margin-top: 4px; color: #8d8b85; font-family: Arial, sans-serif; font-size: 8px; letter-spacing: .18em; }
+.dome-controls { position: absolute; z-index: 2; top: 75px; right: 18px; display: grid; grid-template-columns: repeat(2, 34px); gap: 5px; }
+.dome-controls button, .dome-viewer-toolbar button, .dome-viewer-arrow { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgb(255 255 255 / .2); border-radius: 50%; background: rgb(18 18 18 / .78); color: #e7e5df; cursor: pointer; transition: background .2s ease, border-color .2s ease; }
+.dome-controls button:hover, .dome-viewer-toolbar button:hover, .dome-viewer-arrow:hover { border-color: rgb(255 255 255 / .55); background: #292824; }
+.dome-drag-hint { position: absolute; z-index: 2; bottom: 27px; left: 50%; display: flex; align-items: center; gap: 9px; padding: 9px 13px; border: 1px solid rgb(255 255 255 / .13); border-radius: 18px; transform: translateX(-50%); background: rgb(8 8 8 / .72); backdrop-filter: blur(12px); color: #c1bfb8; font-size: 9px; letter-spacing: .13em; white-space: nowrap; pointer-events: none; }
+.dome-drag-hint svg { color: #c5a77f; }
+.dome-drag-hint span { color: #696761; }
+.dome-footer { max-width: 1500px; margin: 18px auto 0; color: #77756f; }
+.dome-footer b { margin-left: 5px; color: #c6a982; font-weight: 400; }
+
+.dome-viewer { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 72px 8vw 48px; background: rgb(0 0 0 / .96); }
+.dome-viewer-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+.dome-viewer-toolbar { position: absolute; z-index: 2; inset: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 19px 26px; border-bottom: 1px solid rgb(255 255 255 / .1); color: #e9e6df; font-size: 11px; letter-spacing: .13em; }
+.dome-viewer-count { color: #77746f; }
+.dome-viewer-toolbar > div { display: flex; align-items: center; gap: 14px; }
+.dome-viewer-toolbar a { display: inline-flex; align-items: center; gap: 8px; color: #c9c6be; font-size: 10px; text-decoration: none; letter-spacing: .08em; }
+.dome-viewer-toolbar button { width: 38px; height: 38px; background: #171717; }
+.dome-viewer-image-wrap { position: relative; z-index: 1; display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; place-items: center; }
+.dome-viewer-image-wrap img { display: block; width: auto; height: auto; max-width: min(100%, calc(100vw - 120px)); max-height: calc(100svh - 160px); object-fit: contain; object-position: center; }
+.dome-viewer-loading { position: absolute; z-index: 1; color: #9b9891; font-size: 11px; letter-spacing: .12em; }
+.dome-viewer-arrow { position: absolute; z-index: 2; top: 50%; width: 42px; height: 42px; transform: translateY(-50%); }
+.dome-viewer-prev { left: 20px; }.dome-viewer-next { right: 20px; }
+
+.dome-fallback { position: absolute; inset: 0; z-index: 3; overflow: auto; padding: 18px; background: #0b0b0b; }
+.dome-fallback-note { margin: 0 0 16px; color: #aaa; font-size: 12px; }
+.dome-fallback-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.dome-fallback-grid figure { position: relative; overflow: hidden; aspect-ratio: 1; margin: 0; background: #181818; }
+.dome-fallback-grid img { width: 100%; height: 100%; object-fit: cover; }
+.dome-fallback-grid figcaption { position: absolute; right: 8px; bottom: 6px; color: white; font-size: 10px; }
+
+@media (max-width: 700px) {
+  .dome-page { padding: 0; }
+  .dome-collection { display: none; }
+  .dome-brand span { margin-left: 6px; font-size: 8px; }
+  .dome-intro { display: block; margin: 58px 0 24px; }
+  .dome-intro h1 { font-size: clamp(48px, 14vw, 72px); }
+  .dome-description { max-width: 260px; margin: 17px 0 0; font-size: 12px; }
+  .dome-stage { width: 100vw; height: 100svh; min-height: 0; max-height: none; border-radius: 0; }
+  .dome-header { height: 54px; padding: 0 15px; }
+  .dome-color-toggle { gap: 6px; padding: 7px 8px; font-size: 8px; }
+  .dome-collection { display: none; }
+  .dome-counter { bottom: 17px; left: 15px; font-size: 21px; }
+  .dome-controls { top: 65px; right: 10px; grid-template-columns: repeat(2, 31px); }
+  .dome-controls button { width: 31px; height: 31px; }
+  .dome-drag-hint { bottom: 21px; font-size: 8px; }
+  .dome-footer { font-size: 8px; letter-spacing: .1em; }
+  .dome-footer span:nth-child(2) { display: none; }
+  .dome-viewer { padding: 80px 10px 30px; }
+  .dome-viewer-image-wrap img { max-width: calc(100vw - 36px); max-height: calc(100svh - 130px); }
+  .dome-viewer-toolbar { padding: 13px 14px; }
+  .dome-viewer-toolbar a span { display: none; }
+  .dome-viewer-prev { left: 8px; }.dome-viewer-next { right: 8px; }
+}

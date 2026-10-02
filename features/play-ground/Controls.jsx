@@ -2719,11 +2719,11 @@ export default function Controls({
               bg="var(--bg-elevated)"
               border="1px solid var(--border-primary)"
               borderRadius="var(--radius-sm)"
-              color="var(--text-primary)"
+              color="rgb(0, 0, 0)"
               fontSize="12px"
               flex={1}
-              _placeholder={{ color: 'var(--color-accent)' }}
-              _focus={{ borderColor: 'var(--color-primary)', boxShadow: 'none' }}
+              _placeholder={{ color: 'black' }}
+              _focus={{ borderColor: 'black', boxShadow: 'none' }}
               onKeyDown={e => e.key === 'Enter' && !isExporting && handleLoadUrl()}
               disabled={isExporting}
             />
@@ -2735,7 +2735,7 @@ export default function Controls({
           </Flex>
 
           {corsError && (
-            <Box bg="rgba(255,100,100,0.1)" p={2} borderRadius="6px" border="1px solid rgba(255,100,100,0.3)">
+            <Box bg="#ff6464" p={2} borderRadius="6px" border="1px solid rgba(255,100,100,0.3)">
               <Text fontSize="11px" color="#ff6b6b">
                 ⚠️ CORS blocked. Export/copy disabled. Re-upload the media locally to enable.
               </Text>

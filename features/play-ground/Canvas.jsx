@@ -503,7 +503,7 @@ export default function Canvas({
               _hover={{ bg: isExporting ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.4)' }}
               opacity={isExporting ? 0.5 : 1}
             >
-              <Icon as={isPlaying ? Pause : Play} boxSize={4} color="var(--color-accent)" />
+              <Icon as={isPlaying ? Pause : Play} boxSize={4} color="black" />
             </Flex>
             <Flex align="center" gap={2} px={2} minW="180px" opacity={isExporting ? 0.5 : 1}>
               <Text fontSize="10px" color="var(--text-muted)" fontFamily="mono" minW="32px">
@@ -588,6 +588,6 @@ const ControlButton = ({ icon: IconComponent, onClick, isActive }) => (
     transition="all 0.15s"
     _hover={{ bg: isActive ? 'rgba(168, 85, 247, 0.3)' : 'var(--tool-control-hover)' }}
   >
-    <Icon as={IconComponent} boxSize={4} color={isActive ? 'var(--color-accent)' : 'var(--text-muted)'} />
+    <Icon as={IconComponent} boxSize={4} color={isActive ? 'black' : 'var(--text-muted)'} />
   </Flex>
 );

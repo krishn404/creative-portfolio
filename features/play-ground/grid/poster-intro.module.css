@@ -1,0 +1,228 @@
+.canvas {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-dm-sans), Arial, sans-serif;
+  isolation: isolate;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.posterStage,
+.posterGallery {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.posterGallery {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 1.1vw, 16px);
+  width: min(88vw, 1080px);
+  height: min(84svh, 780px);
+  transform: translate(-50%, -50%);
+  perspective: 1200px;
+}
+
+.posterCard {
+  grid-column: var(--poster-column);
+  grid-row: var(--poster-row);
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: clamp(8px, 0.8vw, 12px);
+  background: #080808;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.posterImage {
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.posterCard:nth-child(5) .posterImage,
+.posterCard:nth-child(6) .posterImage {
+  object-fit: contain;
+}
+
+.portraitAnchor {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.portraitCard {
+  position: relative;
+  flex: none;
+  width: clamp(84px, 8.4vw, 112px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #fff;
+  opacity: 0;
+  transform-origin: center;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.portraitImage {
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.heroPortrait {
+  z-index: 4;
+}
+
+.introCopy,
+.outroCopy {
+  position: absolute;
+  z-index: 5;
+  top: calc(50% + clamp(63px, 6.3vw, 83px));
+  left: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  margin: 0;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transform: none;
+  will-change: transform, opacity;
+}
+
+.introCopy span {
+  font-size: clamp(12px, 1.15vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+}
+
+.introCopy span + span {
+  font-weight: 600;
+}
+
+.outroCopy {
+  top: calc(50% + clamp(70px, 6.8vw, 90px));
+  font-size: clamp(15px, 1.5vw, 20px);
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+.replayButton {
+  position: absolute;
+  right: clamp(18px, 3vw, 42px);
+  bottom: clamp(18px, 3vh, 32px);
+  z-index: 8;
+  padding: 8px 2px;
+  border: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 58%);
+  font: 10px var(--font-space-mono), monospace;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.replayButton:hover,
+.replayButton:focus-visible {
+  color: #fff;
+}
+
+.replayButton:focus-visible {
+  outline: 1px solid rgb(255 255 255 / 72%);
+  outline-offset: 5px;
+}
+
+@media (max-width: 700px) {
+  .posterGallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 8px;
+    width: 92vw;
+    height: 88svh;
+  }
+
+  .posterCard {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .posterCard {
+    border-radius: 8px;
+  }
+
+  .portraitCard {
+    width: 82px;
+    border-radius: 9px;
+  }
+
+  .introCopy {
+    top: calc(50% + 52px);
+    gap: 2px;
+  }
+
+  .introCopy span {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .outroCopy {
+    top: calc(50% + 59px);
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .posterGallery {
+    width: 94vw;
+    gap: 6px;
+  }
+
+  .portraitCard {
+    width: 76px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .posterCard,
+  .portraitCard,
+  .introCopy,
+  .outroCopy {
+    will-change: auto;
+  }
+}

@@ -6,7 +6,7 @@ import GradualBlur from "@/components/GradualBlur"
 export default function RouteAwareGradualBlur() {
   const pathname = usePathname()
 
-  if (pathname === "/play-ground" || pathname?.startsWith("/play-ground/")) {
+  if (pathname === "/test" || pathname === "/play-ground" || pathname?.startsWith("/play-ground/")) {
     return null
   }
 

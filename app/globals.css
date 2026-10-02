@@ -387,6 +387,23 @@ body.hide-page-blur .gradual-blur-page {
   opacity: 0.9;
 }
 
+.paper-note {
+  background-color: #f3eddf;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 25px, rgb(105 88 64 / 0.12) 26px),
+    radial-gradient(ellipse at 20% 10%, rgb(255 255 255 / 0.9), transparent 65%);
+  box-shadow: 12px 18px 30px rgb(0 0 0 / 0.14), inset 0 0 32px rgb(108 82 45 / 0.06);
+  transform-origin: 50% 55%;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-note,
+  .paper-note * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .blog-novel-editor .ProseMirror {
   min-height: 360px;
   outline: none;

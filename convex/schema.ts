@@ -71,9 +71,24 @@ export default defineSchema({
     publishedAt: v.optional(v.number()),
     readTime: v.optional(v.string()),
     views: v.number(),
+    seoTitle: v.optional(v.string()),
+    metaDescription: v.optional(v.string()),
+    keywords: v.optional(v.array(v.string())),
+    guestName: v.optional(v.string()),
+    ogImageAlt: v.optional(v.string()),
+    faq: v.optional(v.array(v.object({ q: v.string(), a: v.string() }))),
+    tldr: v.optional(v.string()),
+    updatedAt: v.optional(v.number()),
+    series: v.optional(v.string()),
+    previousSlugs: v.optional(v.array(v.string())),
   })
     .index("by_slug", ["slug"])
     .index("by_published", ["published"]),
+
+  postRedirects: defineTable({
+    fromSlug: v.string(),
+    toSlug: v.string(),
+  }).index("by_from_slug", ["fromSlug"]),
 
   postViewRecords: defineTable({
     postId: v.id("posts"),

@@ -1,12 +1,12 @@
-/** Public hostname only (for robots Host directive and URL building). */
-export const SITE_HOST = "art.krixnx.xyz"
-
-/** Canonical site origin; always HTTPS, no trailing slash. */
-export const SITE_URL = `https://${SITE_HOST}`
+/** Canonical site origin; defaults to the production hostname. */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://art.krixnx.xyz").replace(/\/$/, "")
+export const SITE_HOST = new URL(SITE_URL).host
 export const SITE_NAME = "Krishna Kant Maharshi"
 export const CREATOR_NAME = "Krishna Kant Maharshi"
 export const CREATOR_ALIASES = ["kantcancook", "kant can cook", "psyx"] as const
 export const CREATOR_INSTAGRAM = "https://instagram.com/kantcancook"
+export const CREATOR_PINTEREST = "https://pinterest.com/psyxyx"
+export const CREATOR_PROFILES = [CREATOR_INSTAGRAM, CREATOR_PINTEREST] as const
 export const BLOG_NAME = "Kezual Talks w Kant"
 export const BLOG_ALIASES = [
   "KTWK",

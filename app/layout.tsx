@@ -4,6 +4,8 @@ import { Archivo, DM_Sans, Geist, Geist_Mono, Instrument_Serif, Space_Mono } fro
 import { Analytics } from "@vercel/analytics/next"
 import RouteAwareGradualBlur from "@/components/route-aware-gradual-blur"
 import { buildMetadata } from "@/lib/seo/metadata"
+import { buildSiteIdentityJsonLd } from "@/lib/seo/schema"
+import { JsonLd } from "@/components/seo/JsonLd"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -30,6 +32,10 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   ...buildMetadata(),
+  alternates: {
+    ...buildMetadata().alternates,
+    types: { "application/rss+xml": "/blog/rss.xml" },
+  },
   icons: {
     icon: "/favicon.ico",
   },
@@ -46,6 +52,7 @@ export default function RootLayout({
         className={`relative min-h-screen font-sans antialiased ${archivo.variable} ${dmSans.variable} ${spaceMono.variable}`}
       >
         {children}
+        <JsonLd data={buildSiteIdentityJsonLd()} />
         <RouteAwareGradualBlur />
         <Analytics />
       </body>

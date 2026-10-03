@@ -53,6 +53,11 @@ export function parseTagsInput(input: string): string[] {
     .filter(Boolean)
 }
 
+export type BlogFaq = {
+  q: string
+  a: string
+}
+
 export type BlogPost = {
   id: string
   title: string
@@ -65,4 +70,49 @@ export type BlogPost = {
   publishedAt?: number
   readTime?: string
   views: number
+  seoTitle?: string
+  metaDescription?: string
+  keywords?: string[]
+  guestName?: string
+  ogImageAlt?: string
+  faq?: BlogFaq[]
+  tldr?: string
+  updatedAt?: number
+  series?: string
+  previousSlugs?: string[]
+}
+
+export type PostWriteInput = {
+  title: string
+  slug: string
+  excerpt: string
+  content: string
+  coverImage?: string
+  tags: string[]
+  keywords: string[]
+  published: boolean
+  readTime: string
+  seoTitle?: string
+  metaDescription?: string
+  guestName?: string
+  ogImageAlt?: string
+  faq: BlogFaq[]
+  tldr?: string
+  series?: string
+}
+
+export type BlogPostCard = Pick<BlogPost, "id" | "title" | "slug" | "excerpt" | "tags" | "publishedAt" | "readTime" | "views"> & Pick<BlogPost, "keywords">
+
+export function toBlogPostCard(post: BlogPost): BlogPostCard {
+  return {
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    tags: post.tags,
+    publishedAt: post.publishedAt,
+    readTime: post.readTime,
+    views: post.views,
+    keywords: post.keywords ?? [],
+  }
 }

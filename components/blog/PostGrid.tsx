@@ -1,10 +1,10 @@
 "use client"
 
-import type { BlogPost } from "@/lib/blog/utils"
+import type { BlogPostCard } from "@/lib/blog/utils"
 import { PostCard } from "./PostCard"
 
 type PostGridProps = {
-  posts: BlogPost[]
+  posts: BlogPostCard[]
   isLoading?: boolean
 }
 

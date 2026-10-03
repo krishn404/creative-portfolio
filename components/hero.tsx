@@ -60,37 +60,37 @@ export default function HeroSection() {
   return (
     <section className="relative w-full min-h-screen overflow-hidden bg-background px-4 py-8 text-foreground sm:px-6 md:px-6 md:py-10">
 
-      {/* logo + time */}
-      <div className="relative z-20 mb-8 md:absolute md:left-6 md:top-6 md:mb-0">
-        <Link href="/" className="text-sm font-bold tracking-widest hover:opacity-70">
-          PSYX
-        </Link>
-        <p className="text-[10px] opacity-70" aria-live="polite">
-          {date}
-        </p>
-        <p className="text-[10px] opacity-70">{time}</p>
-      </div>
+      <div className="relative z-20 mb-6 flex items-start justify-between gap-4 md:absolute md:inset-x-6 md:top-6 md:mb-0">
+        <div className="shrink-0">
+          <Link href="/" className="text-sm font-bold tracking-widest hover:opacity-70">
+            PSYX
+          </Link>
+          <p className="text-[10px] opacity-70" aria-live="polite">
+            {date}
+          </p>
+          <p className="text-[10px] opacity-70">{time}</p>
+        </div>
 
-      <nav aria-label="Main navigation" className="relative z-20 mb-8 flex flex-wrap items-center justify-end gap-2 md:absolute md:right-6 md:top-6 md:mb-0">
-        <Link
-          href="/play-ground"
-          className={`${mono.className} landing-writing-nav inline-flex min-h-10 items-center justify-end rounded-full border border-foreground/20 bg-background/75 px-4 text-[10px] uppercase tracking-[0.16em] transition hover:-translate-y-0.5 hover:border-foreground/60 hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
-        >
-          Play Ground →
-        </Link>
-        <Link
-          href="/#writing"
-          className={`${mono.className} landing-writing-nav inline-flex min-h-10 items-center justify-end rounded-full border border-foreground/20 bg-background/75 px-4 text-[10px] uppercase tracking-[0.16em] transition hover:-translate-y-0.5 hover:border-foreground/60 hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
-        >
-          Writing →
-        </Link>
-        <Link
-          href="/test"
-          className={`${mono.className} landing-writing-nav inline-flex min-h-10 items-center justify-end rounded-full border border-foreground/20 bg-background/75 px-4 text-[10px] uppercase tracking-[0.16em] transition hover:-translate-y-0.5 hover:border-foreground/60 hover:bg-foreground hover:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black`}
-        >
-          365 Challenge →
-        </Link>
-      </nav>
+        <nav aria-label="Main navigation" className="min-w-0">
+          <div
+            className={`${mono.className} flex items-center gap-0.5 overflow-x-auto rounded-full border border-foreground/15 bg-background/80 p-1 backdrop-blur-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+          >
+            {[
+              { href: "/play-ground", label: "Playground" },
+              { href: "/#writing", label: "Blog" },
+              { href: "/test", label: "365 Challenge" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="landing-writing-nav inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-[10px] uppercase tracking-[0.14em] text-foreground/80 transition hover:bg-foreground hover:text-background focus-visible:bg-foreground focus-visible:text-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </div>
 
       {/* center images */}
       <div className="relative z-10 flex justify-center md:absolute md:inset-0 md:items-center">

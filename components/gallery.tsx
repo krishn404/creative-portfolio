@@ -6,9 +6,10 @@ import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import useSWR from "swr"
-import { ArrowLeft, ArrowRight, X } from "lucide-react"
+import { ArrowLeft, X } from "lucide-react"
 import type { GalleryFilter, MediaAsset, WorkItem } from "@/lib/content"
 import { displayWorkCategory, GALLERY_FILTERS, workMatchesCategory } from "@/lib/content"
+import FlexCarousel from "@/components/FlexCarousel"
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -111,10 +112,8 @@ export default function Gallery() {
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null)
   const [activeMediaIndex, setActiveMediaIndex] = useState(0)
   const [hoveredWorkId, setHoveredWorkId] = useState<string | null>(null)
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [isHydrated, setIsHydrated] = useState(false)
   const scrollPositionRef = useRef(0)
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   const { ref, inView } = useInView({
     triggerOnce: true,
@@ -155,7 +154,6 @@ export default function Gallery() {
 
   const resetViewerState = useCallback(() => {
     setActiveMediaIndex(0)
-    setIsImageModalOpen(false)
   }, [])
 
   const closeModalState = useCallback(() => {
@@ -184,23 +182,18 @@ export default function Gallery() {
     closeModalState()
   }, [closeModalState])
 
-  const goToMedia = useCallback(
-    (index: number) => {
-      if (!selectedMedia.length) return
-      setActiveMediaIndex((index + selectedMedia.length) % selectedMedia.length)
-    },
-    [selectedMedia.length],
-  )
-
-  const goToNextMedia = useCallback(() => {
-    if (selectedMedia.length <= 1) return
-    goToMedia(activeMediaIndex + 1)
-  }, [activeMediaIndex, goToMedia, selectedMedia.length])
-
-  const goToPreviousMedia = useCallback(() => {
-    if (selectedMedia.length <= 1) return
-    goToMedia(activeMediaIndex - 1)
-  }, [activeMediaIndex, goToMedia, selectedMedia.length])
+  const carouselItems = useMemo(() => {
+    if (!selectedWork) return []
+    const subtitle = [selectedWork.year, selectedWork.category ? displayWorkCategory(selectedWork.category) : ""]
+      .filter(Boolean)
+      .join(" · ")
+    return selectedMedia.map((asset, index) => ({
+      src: getOptimizedImage(asset.url, 1600),
+      alt: `${selectedWork.title} image ${index + 1}`,
+      title: selectedWork.title,
+      subtitle: subtitle || undefined,
+    }))
+  }, [selectedMedia, selectedWork])
 
   useEffect(() => {
     if (!selectedWork) return
@@ -210,27 +203,9 @@ export default function Gallery() {
     document.body.classList.add("hide-page-blur")
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isImageModalOpen && event.key === "Escape") {
-        event.preventDefault()
-        setIsImageModalOpen(false)
-        return
-      }
-
-      if (event.key === "Escape") {
-        event.preventDefault()
-        closeWork()
-      }
-
-      if (event.key === "ArrowRight") {
-        event.preventDefault()
-        goToNextMedia()
-      }
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault()
-        goToPreviousMedia()
-      }
-
+      if (event.key !== "Escape" || event.defaultPrevented) return
+      event.preventDefault()
+      closeWork()
     }
 
     const handlePopState = () => {
@@ -246,7 +221,7 @@ export default function Gallery() {
       document.removeEventListener("keydown", handleKeyDown)
       window.removeEventListener("popstate", handlePopState)
     }
-  }, [closeModalState, closeWork, goToNextMedia, goToPreviousMedia, isImageModalOpen, selectedWork])
+  }, [closeModalState, closeWork, selectedWork])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -487,7 +462,7 @@ export default function Gallery() {
                       </button>
                     </div>
 
-                    <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
+                    <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)]">
                       <aside className="overflow-y-auto border-b border-border/70 bg-card/60 p-5 lg:border-b-0 lg:border-r lg:p-6">
                         <div className="space-y-6 lg:sticky lg:top-0">
                           <div className="space-y-3">
@@ -503,161 +478,34 @@ export default function Gallery() {
                             </div>
                           </div>
 
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Gallery</p>
-                              <p className="text-sm text-muted-foreground">
-                                {selectedMedia.length} {selectedMedia.length === 1 ? "image" : "images"}
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-3">
-                              {selectedMedia.map((asset, index) => (
-                                <button
-                                  key={`${asset.url}-${index}`}
-                                  type="button"
-                                  onClick={() => goToMedia(index)}
-                                  className={`overflow-hidden rounded-xl border transition ${
-                                    index === activeMediaIndex
-                                      ? "border-foreground shadow-md"
-                                      : "border-border hover:border-foreground/40"
-                                  }`}
-                                >
-                                  <ProgressiveImage
-                                    src={asset.url}
-                                    alt={`${selectedWork.title} thumbnail ${index + 1}`}
-                                    imageWidth={240}
-                                    className="aspect-square"
-                                    imgClassName="h-full w-full object-cover"
-                                  />
-                                </button>
-                              ))}
-                            </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Gallery</p>
+                            <p className="text-sm text-muted-foreground">
+                              {selectedMedia.length} {selectedMedia.length === 1 ? "image" : "images"}
+                            </p>
                           </div>
                         </div>
                       </aside>
 
-                      <div className="relative flex min-h-0 flex-col bg-muted/20">
-                        <div className="flex items-center justify-between border-b border-border/70 px-4 py-3 md:px-6">
-                          <div className="text-sm text-muted-foreground">
-                            {selectedMedia.length > 1
-                              ? "Use arrows, swipe, or thumbnails to navigate."
-                              : "Single artwork view."}
-                          </div>
-                        </div>
-
-                        <div className="relative min-h-0 flex-1">
-                          {selectedMedia.length > 1 ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={goToPreviousMedia}
-                                className="absolute left-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
-                                aria-label="Previous image"
-                              >
-                                <ArrowLeft className="h-5 w-5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={goToNextMedia}
-                                className="absolute right-3 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/60"
-                                aria-label="Next image"
-                              >
-                                <ArrowRight className="h-5 w-5" />
-                              </button>
-                            </>
-                          ) : null}
-
-                          <div
-                            className="flex h-full items-center justify-center overflow-auto p-4 md:p-8"
-                            onTouchStart={(event) => {
-                              const touch = event.touches[0]
-                              touchStartRef.current = { x: touch.clientX, y: touch.clientY }
-                            }}
-                            onTouchEnd={(event) => {
-                              const start = touchStartRef.current
-                              if (!start) return
-                              const touch = event.changedTouches[0]
-                              const deltaX = touch.clientX - start.x
-                              const deltaY = touch.clientY - start.y
-                              if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
-                                if (deltaX < 0) goToNextMedia()
-                                if (deltaX > 0) goToPreviousMedia()
-                              }
-                              touchStartRef.current = null
-                            }}
-                          >
-                            <AnimatePresence mode="wait">
-                              <motion.div
-                                key={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.98 }}
-                                transition={{ duration: 0.22 }}
-                                className="flex h-full w-full items-center justify-center"
-                              >
-                                <ProgressiveImage
-                                  src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
-                                  alt={`${selectedWork.title} image ${activeMediaIndex + 1}`}
-                                  className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/30"
-                                  imgClassName="mx-auto h-auto max-h-full w-auto max-w-full object-contain"
-                                  imageWidth={1800}
-                                  onClick={() => setIsImageModalOpen(true)}
-                                />
-                              </motion.div>
-                            </AnimatePresence>
-                          </div>
-                        </div>
+                      <div className="relative h-[560px] w-full bg-muted/20 lg:h-full">
+                        {carouselItems.length > 0 ? (
+                          <FlexCarousel
+                            key={selectedWork.id}
+                            items={carouselItems}
+                            preset="liquid"
+                            intro="rise"
+                            cardHeight={0.5}
+                            gap={12}
+                            squeeze={0.2}
+                            focusOnClick
+                            captions
+                            onChange={(index) => setActiveMediaIndex(index)}
+                          />
+                        ) : null}
                       </div>
                     </div>
                   </div>
                 </motion.div>
-
-                <AnimatePresence>
-                  {isImageModalOpen ? (
-                    <>
-                      <motion.button
-                        type="button"
-                        aria-label="Close expanded image"
-                        className="fixed inset-0 z-[130] bg-black/75"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={() => setIsImageModalOpen(false)}
-                      />
-
-                      <motion.div
-                        className="fixed inset-0 z-[131] flex items-center justify-center p-4 md:p-8"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div
-                          className="relative flex h-full w-full max-w-6xl items-center justify-center"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setIsImageModalOpen(false)}
-                            aria-label="Close expanded image"
-                            className="absolute right-0 top-0 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white transition hover:bg-black/60"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-
-                          <ProgressiveImage
-                            src={selectedMedia[activeMediaIndex]?.url ?? selectedWork.img}
-                            alt={`${selectedWork.title} expanded image ${activeMediaIndex + 1}`}
-                            className="flex h-full w-full items-center justify-center rounded-2xl bg-black/20"
-                            imgClassName="mx-auto h-auto max-h-[calc(100vh-4rem)] w-auto max-w-full object-contain"
-                            imageWidth={2000}
-                          />
-                        </div>
-                      </motion.div>
-                    </>
-                  ) : null}
-                </AnimatePresence>
               </>
             ) : null}
           </AnimatePresence>,

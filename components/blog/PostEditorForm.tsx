@@ -1,24 +1,15 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import { NovelEditor } from "./NovelEditor"
 import { CoverImageUpload } from "./CoverImageUpload"
-import { computeReadTime, parseTagsInput, slugify } from "@/lib/blog/utils"
-import type { BlogPost } from "@/lib/blog/utils"
+import { computeReadTime, parseTagsInput, slugify, type BlogPost, type PostWriteInput, type BlogFaq } from "@/lib/blog/utils"
+import { seoWarnings, displayDescription, documentTitle } from "@/lib/blog/seo"
 
 type PostEditorFormProps = {
   post?: BlogPost
-  onSave: (data: {
-    title: string
-    slug: string
-    excerpt: string
-    content: string
-    coverImage?: string
-    tags: string[]
-    published: boolean
-    readTime: string
-  }) => Promise<void>
+  onSave: (data: PostWriteInput) => Promise<void>
 }
 
 export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
@@ -29,17 +20,22 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
   const [tagsInput, setTagsInput] = useState(post?.tags.join(", ") ?? "")
   const [coverImage, setCoverImage] = useState(post?.coverImage ?? "")
   const [content, setContent] = useState(post?.content ?? "")
+  const [seoTitle, setSeoTitle] = useState(post?.seoTitle ?? "")
+  const [metaDescription, setMetaDescription] = useState(post?.metaDescription ?? "")
+  const [keywordsInput, setKeywordsInput] = useState(post?.keywords?.join(", ") ?? "")
+  const [guestName, setGuestName] = useState(post?.guestName ?? "")
+  const [ogImageAlt, setOgImageAlt] = useState(post?.ogImageAlt ?? "")
+  const [tldr, setTldr] = useState(post?.tldr ?? "")
+  const [faq, setFaq] = useState<BlogFaq[]>(post?.faq ?? [])
+  const [showSeoWarnings, setShowSeoWarnings] = useState(false)
   const [published, setPublished] = useState(post?.published ?? false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  useEffect(() => {
-    if (!slugTouched && title) {
-      setSlug(slugify(title))
-    }
-  }, [title, slugTouched])
-
   const tags = parseTagsInput(tagsInput)
+  const keywords = parseTagsInput(keywordsInput)
+  const effectiveSlug = slugTouched ? slug : slugify(title)
+  const warnings = seoWarnings({ title, seoTitle, metaDescription, excerpt, tldr, guestName, keywords, ogImageAlt, hasCover: Boolean(coverImage) })
 
   async function handleSave(publish: boolean) {
     setError(null)
@@ -47,7 +43,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
       setError("Title is required")
       return
     }
-    if (!slug.trim()) {
+    if (!effectiveSlug.trim()) {
       setError("Slug is required")
       return
     }
@@ -58,18 +54,30 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
 
     const readTime = computeReadTime(content)
     const shouldPublish = publish ? true : published
+    if (publish && warnings.length > 0 && !showSeoWarnings) {
+      setShowSeoWarnings(true)
+      setError("Review the SEO notes above, then choose PUBLISH again to continue.")
+      return
+    }
 
     startTransition(async () => {
       try {
         await onSave({
           title: title.trim(),
-          slug: slug.trim(),
+          slug: effectiveSlug.trim(),
           excerpt: excerpt.trim() || title.trim(),
           content,
           coverImage: coverImage || undefined,
           tags,
           published: shouldPublish,
           readTime,
+          seoTitle: seoTitle.trim() || undefined,
+          metaDescription: metaDescription.trim() || undefined,
+          keywords,
+          guestName: guestName.trim() || undefined,
+          ogImageAlt: ogImageAlt.trim() || undefined,
+          tldr: tldr.trim() || undefined,
+          faq: faq.filter((item) => item.q.trim() && item.a.trim()),
         })
         if (publish) setPublished(true)
       } catch (err) {
@@ -108,7 +116,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           <input
             id="post-slug"
             type="text"
-            value={slug}
+            value={effectiveSlug}
             aria-describedby="post-slug-help"
             onChange={(e) => {
               setSlugTouched(true)
@@ -118,22 +126,44 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           />
         </div>
 
-        <div>
-          <label htmlFor="post-excerpt" className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
-            EXCERPT
+        <section className="space-y-4 border border-black p-4" aria-labelledby="seo-panel-title">
+          <h2 id="seo-panel-title" className="blog-font-headline text-2xl">SEO and answer details</h2>
+          <label className="block text-sm">SEO title <span className="text-xs text-[var(--text-secondary)]">{documentTitle({ title, seoTitle } as BlogPost).length}/60</span>
+            <input value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={120} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder="Uses post title when empty" />
           </label>
-          <p id="post-excerpt-help" className="mb-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-            The short summary used in blog previews, cards, search results, and social sharing metadata.
-          </p>
-          <textarea
-            id="post-excerpt"
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            aria-describedby="post-excerpt-help"
-            rows={2}
-            className="blog-font-body w-full resize-none border border-black bg-[var(--surface)] px-3 py-2 text-base outline-none focus:ring-1 focus:ring-black"
-          />
-        </div>
+          <label className="block text-sm">Meta description <span className="text-xs text-[var(--text-secondary)]">{metaDescription.length}/160</span>
+            <textarea value={metaDescription} onChange={(event) => setMetaDescription(event.target.value)} rows={3} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <label className="block text-sm">Excerpt
+            <textarea value={excerpt} onChange={(event) => setExcerpt(event.target.value)} rows={2} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <label className="block text-sm">Keywords, comma-separated
+            <input value={keywordsInput} onChange={(event) => setKeywordsInput(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <label className="block text-sm">Guest name
+            <input value={guestName} onChange={(event) => setGuestName(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <label className="block text-sm">Cover image alt text
+            <input value={ogImageAlt} onChange={(event) => setOgImageAlt(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <label className="block text-sm">TL;DR, 40 to 60 words
+            <textarea value={tldr} onChange={(event) => setTldr(event.target.value)} rows={3} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+          </label>
+          <div>
+            <h3 className="mb-2 text-sm font-medium">Frequently asked questions</h3>
+            {faq.map((item, index) => <div key={index} className="mb-3 grid gap-2 sm:grid-cols-2">
+              <input aria-label={`FAQ question ${index + 1}`} value={item.q} onChange={(event) => setFaq(faq.map((entry, i) => i === index ? { ...entry, q: event.target.value } : entry))} placeholder="Question" className="border border-black bg-[var(--surface)] px-3 py-2" />
+              <div className="flex gap-2"><textarea aria-label={`FAQ answer ${index + 1}`} value={item.a} onChange={(event) => setFaq(faq.map((entry, i) => i === index ? { ...entry, a: event.target.value } : entry))} placeholder="Answer" rows={2} className="min-w-0 flex-1 border border-black bg-[var(--surface)] px-3 py-2" /><button type="button" onClick={() => setFaq(faq.filter((_, i) => i !== index))} className="text-sm underline">Remove</button></div>
+            </div>)}
+            <button type="button" onClick={() => setFaq([...faq, { q: "", a: "" }])} className="text-sm underline">Add FAQ</button>
+          </div>
+          <div className="border border-black bg-white p-3 text-black" aria-label="Google search snippet preview">
+            <p className="text-lg text-blue-800">{documentTitle({ title, seoTitle } as BlogPost)}</p>
+            <p className="text-xs text-green-800">art.krixnx.xyz / blog / {slug || "post-slug"}</p>
+            <p className="text-sm">{displayDescription({ title, excerpt: metaDescription || excerpt, metaDescription } as BlogPost)}</p>
+          </div>
+          {showSeoWarnings && warnings.length > 0 && <ul className="list-disc pl-5 text-sm text-amber-800" role="status">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
+        </section>
 
         <div>
           <label htmlFor="post-tags" className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
@@ -169,7 +199,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
 
         {error && (
           <p className="blog-font-mono text-xs text-red-600" role="alert">
-            // {error}
+            {`// ${error}`}
           </p>
         )}
       </div>

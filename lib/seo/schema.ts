@@ -4,12 +4,14 @@ import {
   BLOG_NAME,
   CREATOR_ALIASES,
   CREATOR_INSTAGRAM,
+  CREATOR_PINTEREST,
   CREATOR_NAME,
   KNOWS_ABOUT,
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo/constants"
-import type { BlogPost } from "@/lib/blog/utils"
+import type { BlogPost, BlogPostCard } from "@/lib/blog/utils"
+import { displayDescription, postTopics } from "@/lib/blog/seo"
 
 type JsonLd = Record<string, unknown>
 
@@ -25,7 +27,7 @@ function personNode() {
     image: `${SITE_URL}/api/og?title=kantcancook%20Artist`,
     description:
       "Krishna Kant Maharshi, also known as kantcancook and psyx, is a visual designer and creative working across music, film, culture, and apparel.",
-    sameAs: [CREATOR_INSTAGRAM, SITE_URL],
+    sameAs: [CREATOR_INSTAGRAM, CREATOR_PINTEREST, SITE_URL],
     jobTitle: "Visual Designer",
     knowsAbout: [...KNOWS_ABOUT],
   }
@@ -38,14 +40,14 @@ function subjectFromTitle(title: string): string | undefined {
   return name
 }
 
-export function articleKeywords(post: BlogPost): string[] {
+export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial<Pick<BlogPost, "keywords">>): string[] {
   const subject = subjectFromTitle(post.title)
   return Array.from(
     new Set(
       [
         post.title,
         subject,
-        ...post.tags,
+        ...postTopics(post),
         CREATOR_NAME,
         ...CREATOR_ALIASES,
         BLOG_NAME,
@@ -89,6 +91,16 @@ export function buildPortfolioJsonLd(): JsonLd[] {
       author: { "@id": personId },
       creator: { "@id": personId },
       inLanguage: "en",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "CreativeWorkSeries",
+      "@id": `${SITE_URL}/about-ktwk#series`,
+      name: BLOG_NAME,
+      alternateName: "KTWK",
+      description: BLOG_DESCRIPTION,
+      url: `${SITE_URL}/about-ktwk`,
+      creator: { "@id": personId },
     },
     {
       "@context": "https://schema.org",
@@ -153,7 +165,35 @@ export function buildPortfolioJsonLd(): JsonLd[] {
   ]
 }
 
-export function buildBlogJsonLd(posts: BlogPost[]): JsonLd[] {
+export function buildSiteIdentityJsonLd(): JsonLd[] {
+  const websiteId = `${SITE_URL}#website`
+  return [
+    { "@context": "https://schema.org", ...personNode() },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": websiteId,
+      url: SITE_URL,
+      name: SITE_NAME,
+      alternateName: [...CREATOR_ALIASES],
+      publisher: { "@id": personId },
+      inLanguage: "en",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "CreativeWorkSeries",
+      "@id": `${SITE_URL}/about-ktwk#series`,
+      name: BLOG_NAME,
+      alternateName: "KTWK",
+      description: BLOG_DESCRIPTION,
+      url: `${SITE_URL}/about-ktwk`,
+      creator: { "@id": personId },
+      isPartOf: { "@id": websiteId },
+    },
+  ]
+}
+
+export function buildBlogJsonLd(posts: BlogPostCard[]): JsonLd[] {
   return [
     {
       "@context": "https://schema.org",
@@ -179,16 +219,24 @@ export function buildBlogJsonLd(posts: BlogPost[]): JsonLd[] {
         keywords: articleKeywords(post).join(", "),
       })),
     },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: BLOG_NAME, item: `${SITE_URL}/blog` },
+      ],
+    },
   ]
 }
 
 export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] {
   const url = `${SITE_URL}/blog/${post.slug}`
   const publishedAt = post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined
-  const subject = subjectFromTitle(post.title)
+  const subject = post.guestName?.trim()
   const about = [
     ...(subject ? [{ "@type": "Person", name: subject }] : []),
-    ...post.tags.map((tag) => ({ "@type": "Thing", name: tag })),
+    ...postTopics(post).map((tag) => ({ "@type": "Thing", name: tag })),
   ]
 
   return [
@@ -202,24 +250,48 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
       "@id": `${url}#article`,
       mainEntityOfPage: { "@type": "WebPage", "@id": url },
       headline: post.title,
-      description: post.excerpt,
+      description: displayDescription(post),
       image,
       url,
       datePublished: publishedAt,
-      dateModified: publishedAt,
+      dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : publishedAt,
       inLanguage: "en",
       keywords: articleKeywords(post).join(", "),
       articleSection: BLOG_NAME,
       about: about.length ? about : undefined,
       author: personNode(),
       publisher: personNode(),
+      mentions: post.guestName ? [{ "@type": "Person", name: post.guestName }] : undefined,
       isPartOf: {
-        "@type": "Blog",
-        "@id": `${SITE_URL}/blog#blog`,
+        "@type": "CreativeWorkSeries",
+        "@id": `${SITE_URL}/about-ktwk#series`,
         name: BLOG_NAME,
-        alternateName: [...BLOG_ALIASES],
-        url: `${SITE_URL}/blog`,
+        alternateName: "KTWK",
+        url: `${SITE_URL}/about-ktwk`,
       },
     },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "About KTWK", item: `${SITE_URL}/about-ktwk` },
+        { "@type": "ListItem", position: 2, name: "All interviews", item: `${SITE_URL}/blog` },
+        { "@type": "ListItem", position: 3, name: post.title, item: url },
+      ],
+    },
   ]
+}
+
+export function buildFaqJsonLd(post: BlogPost): JsonLd | undefined {
+  if (!post.faq?.length) return undefined
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": `${SITE_URL}/blog/${post.slug}#faq`,
+    mainEntity: post.faq.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  }
 }

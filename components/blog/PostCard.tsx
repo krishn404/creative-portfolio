@@ -2,11 +2,11 @@
 
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
-import type { BlogPost } from "@/lib/blog/utils"
+import type { BlogPostCard } from "@/lib/blog/utils"
 import { formatViews } from "@/lib/blog/utils"
 
 type PostCardProps = {
-  post: BlogPost
+  post: BlogPostCard
   index: number
 }
 

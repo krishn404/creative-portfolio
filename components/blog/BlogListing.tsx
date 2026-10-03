@@ -1,10 +1,10 @@
 import Link from "next/link"
-import type { BlogPost } from "@/lib/blog/utils"
+import type { BlogPostCard } from "@/lib/blog/utils"
 import { BLOG_DESCRIPTION, BLOG_NAME } from "@/lib/seo/constants"
 import { PostGrid } from "./PostGrid"
 
 type BlogListingProps = {
-  posts: BlogPost[]
+  posts: BlogPostCard[]
   linkTitleToBlog?: boolean
   titleAs?: "h1" | "h2"
   isLoading?: boolean

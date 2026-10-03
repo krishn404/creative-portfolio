@@ -129,7 +129,7 @@ export default function DomeGallery() {
       }}>
         <header className="dome-header">
           <Link className="dome-brand" href="/" aria-label="Return to portfolio">PSYX<span> / IMAGE STUDIES</span></Link>
-          <span className="dome-collection">COLLECTION 01 <i>·</i> {galleryImages.length} FRAMES</span>
+          <span className="dome-collection">COLLECTION 01 <i>·</i> {365} FRAMES</span>
           <button
             type="button"
             className={`dome-color-toggle ${colorMode === "original" ? "is-original" : ""}`}

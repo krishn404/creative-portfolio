@@ -300,6 +300,9 @@ importers:
       '@types/sanitize-html':
         specifier: ^2.16.0
         version: 2.16.1
+      '@types/three':
+        specifier: 0.186.0
+        version: 0.186.0
       baseline-browser-mapping:
         specifier: ^2.9.4
         version: 2.9.19

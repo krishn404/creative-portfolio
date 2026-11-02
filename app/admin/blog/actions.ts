@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { ADMIN_COOKIE_NAME } from "@/lib/auth"
+import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
@@ -37,7 +37,8 @@ async function pingIndexNow(url: string) {
 async function assertAdminSession() {
   const cookieStore = await cookies()
   const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value
-  const expected = process.env.ADMIN_SESSION_TOKEN || process.env.ADMIN_PASSWORD
+  // The admin password is used only to log in; the cookie stores the session token.
+  const expected = getAdminSessionToken()
   if (!token || token !== expected) {
     throw new Error("UNAUTHORIZED")
   }

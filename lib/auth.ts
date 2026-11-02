@@ -1,14 +1,16 @@
-import { cookies } from "next/headers"
 import type { NextRequest, NextResponse } from "next/server"
 
 export const ADMIN_COOKIE_NAME = "admin_session"
 
-const sessionToken = process.env.ADMIN_SESSION_TOKEN || "change-me-session"
+export function getAdminSessionToken() {
+  return process.env.ADMIN_SESSION_TOKEN || "change-me-session"
+}
+
 const adminPassword = process.env.ADMIN_PASSWORD || "change-me-password"
 
 export function isAuthenticated(request: NextRequest): boolean {
   const cookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value
-  return Boolean(cookie && cookie === sessionToken)
+  return Boolean(cookie && cookie === getAdminSessionToken())
 }
 
 export function assertAuthenticated(request: NextRequest) {
@@ -18,7 +20,7 @@ export function assertAuthenticated(request: NextRequest) {
 }
 
 export function setSessionCookie(response: NextResponse) {
-  response.cookies.set(ADMIN_COOKIE_NAME, sessionToken, {
+  response.cookies.set(ADMIN_COOKIE_NAME, getAdminSessionToken(), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

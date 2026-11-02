@@ -1,6 +1,8 @@
 import readingTime from "reading-time"
 import type { JSONContent } from "novel"
 
+export { parseTagsInput, uniqueTags } from "./tags.mjs"
+
 export function slugify(title: string): string {
   return title
     .toLowerCase()
@@ -44,13 +46,6 @@ export function formatPostDate(timestamp?: number): string {
   })
     .format(new Date(timestamp))
     .toUpperCase()
-}
-
-export function parseTagsInput(input: string): string[] {
-  return input
-    .split(",")
-    .map((t) => t.trim().toLowerCase())
-    .filter(Boolean)
 }
 
 export type BlogFaq = {

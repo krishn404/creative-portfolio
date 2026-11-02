@@ -9,15 +9,9 @@ import type { Id } from "@/convex/_generated/dataModel"
 import type { PostWriteInput } from "@/lib/blog/utils"
 import { SITE_URL } from "@/lib/seo/constants"
 import { tagPath } from "@/lib/blog/seo"
+import { saveErrorMessage } from "@/lib/blog/save-error.mjs"
 
 type SavePostResult = { ok: true; id?: string } | { ok: false; message: string }
-
-function saveErrorMessage(error: unknown) {
-  const message = error instanceof Error ? error.message : ""
-  if (message.includes("UNAUTHORIZED")) return "Your admin session expired. Refresh the page and sign in again."
-  if (message.includes("slug already exists")) return "That SLUG is already in use. Choose a different slug and try again."
-  return "The post could not be saved. Please try again. If it happens again, contact the site administrator."
-}
 
 async function refreshBlogPaths(slug?: string, tags: string[] = []) {
   revalidatePath("/")

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "test": "node --test",
     "gallery:optimize": "node scripts/optimize-gallery.mjs",
     "gallery:upload": "node scripts/upload-365-to-cloudinary.mjs",
     "lint": "eslint .",

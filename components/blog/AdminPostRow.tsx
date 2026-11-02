@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Pencil, Trash2, Eye, EyeOff } from "lucide-react"
 import type { BlogPost } from "@/lib/blog/utils"
-import { formatPostDate } from "@/lib/blog/utils"
+import { formatPostDate, uniqueTags } from "@/lib/blog/utils"
 
 type AdminPostRowProps = {
   post: BlogPost
@@ -29,7 +29,7 @@ export function AdminPostRow({ post, index, onDelete, onTogglePublish, busy }: A
       </td>
       <td className="px-3 py-4">
         <div className="flex flex-wrap gap-1">
-          {post.tags.map((tag) => (
+          {uniqueTags(post.tags).map((tag) => (
             <span key={tag} className="blog-font-mono text-[9px]">
               [{tag}]
             </span>

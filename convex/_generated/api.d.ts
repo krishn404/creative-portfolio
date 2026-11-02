@@ -9,6 +9,7 @@
  */
 
 import type * as content from "../content.js";
+import type * as postText from "../postText.js";
 import type * as posts from "../posts.js";
 import type * as works from "../works.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   content: typeof content;
+  postText: typeof postText;
   posts: typeof posts;
   works: typeof works;
 }>;

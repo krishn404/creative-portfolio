@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import type { BlogPostCard } from "@/lib/blog/utils"
-import { formatViews } from "@/lib/blog/utils"
+import { formatViews, uniqueTags } from "@/lib/blog/utils"
 
 type PostCardProps = {
   post: BlogPostCard
@@ -37,7 +37,7 @@ export function PostCard({ post, index }: PostCardProps) {
               {post.excerpt}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {post.tags.map((tag) => (
+              {uniqueTags(post.tags).map((tag) => (
                 <span
                   key={tag}
                   className="blog-font-mono border border-black px-2 py-0.5 text-[9px] tracking-wider"

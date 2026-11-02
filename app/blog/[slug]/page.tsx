@@ -13,6 +13,7 @@ import { PostMeta } from "@/components/blog/PostMeta"
 import { ReadingProgress } from "@/components/blog/ReadingProgress"
 import { IncrementViews } from "@/components/blog/IncrementViews"
 import type { BlogPost } from "@/lib/blog/utils"
+import { uniqueTags } from "@/lib/blog/utils"
 import { JsonLd } from "@/components/seo/JsonLd"
 import { displayDescription, displayTldr, documentTitle, postTopics, relatedPosts, tagPath } from "@/lib/blog/seo"
 
@@ -126,7 +127,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <hr className="my-6 border-black" />
 
         <div className="mb-4 flex flex-wrap gap-2">
-          {post.tags.map((tag) => (
+          {uniqueTags(post.tags).map((tag) => (
             <span key={tag} className="blog-font-mono border border-black px-2 py-0.5 text-[9px] tracking-wider">
               [{tag}]
             </span>

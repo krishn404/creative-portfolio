@@ -25,6 +25,10 @@ function clean(value?: string) {
   return next ? next : undefined
 }
 
+function cleanTags(tags: string[]) {
+  return Array.from(new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)))
+}
+
 function cleanFaq(faq?: { q: string; a: string }[]) {
   return (faq ?? [])
     .map((item) => ({ q: item.q.trim(), a: item.a.trim() }))
@@ -257,7 +261,7 @@ export const createPost = mutation({
       excerpt,
       content: args.content,
       coverImage: args.coverImage,
-      tags: args.tags,
+      tags: cleanTags(args.tags),
       published: args.published,
       publishedAt: args.published ? now : undefined,
       readTime: args.readTime,
@@ -349,7 +353,7 @@ export const updatePost = mutation({
       excerpt,
       content: args.content,
       coverImage: args.coverImage,
-      tags: args.tags,
+      tags: cleanTags(args.tags),
       published: args.published,
       publishedAt,
       readTime: args.readTime,

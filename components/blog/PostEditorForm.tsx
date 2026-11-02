@@ -179,8 +179,8 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           />
           {tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span key={tag} className="blog-font-mono border border-black px-2 py-0.5 text-[9px]">
+              {tags.map((tag, index) => (
+                <span key={`${tag}-${index}`} className="blog-font-mono border border-black px-2 py-0.5 text-[9px]">
                   [{tag}]
                 </span>
               ))}

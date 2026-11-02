@@ -48,7 +48,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
       return
     }
     if (!content.trim()) {
-      setError("Content is required")
+      setError("CONTENT is required. Write or paste the article in the large editor under the CONTENT label.")
       return
     }
 
@@ -192,8 +192,11 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
 
         <div>
           <label className="blog-font-mono mb-1 block text-[10px] tracking-wider text-[var(--text-secondary)]">
-            CONTENT
+            CONTENT (REQUIRED)
           </label>
+          <p className="mb-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+            Write or paste the article body in the editor below.
+          </p>
           <NovelEditor content={content} onChange={setContent} />
         </div>
 

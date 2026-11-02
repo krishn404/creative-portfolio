@@ -292,11 +292,14 @@ export function NovelEditor({ content, onChange }: NovelEditorProps) {
     if (!draft) return
     try {
       editor.commands.setContent(JSON.parse(draft), false)
+      // Restoring the editor alone leaves the parent form's content state empty,
+      // which makes save validation reject content that is visible in the editor.
+      onChange(draft)
       setSavedAt(new Date())
     } catch {
       window.localStorage.removeItem(AUTOSAVE_KEY)
     }
-  }, [content, editor])
+  }, [content, editor, onChange])
 
   const pickImage = useCallback(() => {
     fileInputRef.current?.click()

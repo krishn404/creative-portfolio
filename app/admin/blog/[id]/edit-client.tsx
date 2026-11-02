@@ -12,7 +12,8 @@ export function EditPostClient({ post }: { post: BlogPost }) {
     <PostEditorForm
       post={post}
       onSave={async (data) => {
-        await updatePostAction(post.id, data)
+        const result = await updatePostAction(post.id, data)
+        if (!result.ok) throw new Error(result.message)
         router.refresh()
       }}
     />

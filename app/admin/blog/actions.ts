@@ -10,6 +10,15 @@ import type { PostWriteInput } from "@/lib/blog/utils"
 import { SITE_URL } from "@/lib/seo/constants"
 import { tagPath } from "@/lib/blog/seo"
 
+type SavePostResult = { ok: true; id?: string } | { ok: false; message: string }
+
+function saveErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : ""
+  if (message.includes("UNAUTHORIZED")) return "Your admin session expired. Refresh the page and sign in again."
+  if (message.includes("slug already exists")) return "That SLUG is already in use. Choose a different slug and try again."
+  return "The post could not be saved. Please try again. If it happens again, contact the site administrator."
+}
+
 async function refreshBlogPaths(slug?: string, tags: string[] = []) {
   revalidatePath("/")
   revalidatePath("/blog")
@@ -44,29 +53,54 @@ async function assertAdminSession() {
   }
 }
 
-export async function createPostAction(data: PostWriteInput) {
-  await assertAdminSession()
-  const result = await convex.mutation(api.posts.createPost, data)
-  await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords])
-  revalidatePath("/admin/blog")
+export async function createPostAction(data: PostWriteInput): Promise<SavePostResult> {
+  let result: { id: Id<"posts"> }
+  try {
+    await assertAdminSession()
+    result = await convex.mutation(api.posts.createPost, data)
+  } catch (error) {
+    console.error("Failed to create blog post:", error)
+    return { ok: false, message: saveErrorMessage(error) }
+  }
+
+  try {
+    await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords])
+    revalidatePath("/admin/blog")
+  } catch (error) {
+    // The post is already saved. A cache refresh failure should not make the
+    // editor report that the write failed or invite a duplicate retry.
+    console.error("Blog post was created, but cache refresh failed:", error)
+  }
   if (data.published) await pingIndexNow(`${SITE_URL}/blog/${data.slug}`)
-  return result
+  return { ok: true, id: result.id }
 }
 
 export async function updatePostAction(
   id: string,
   data: PostWriteInput,
-) {
-  await assertAdminSession()
-  const result = await convex.mutation(api.posts.updatePost, {
-    id: id as Id<"posts">,
-    ...data,
-  })
-  await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords])
-  if (result.previousSlug) revalidatePath(`/blog/${result.previousSlug}`)
-  revalidatePath("/admin/blog")
-  revalidatePath(`/admin/blog/${id}`)
+) : Promise<SavePostResult> {
+  let result: { ok: boolean; previousSlug?: string }
+  try {
+    await assertAdminSession()
+    result = await convex.mutation(api.posts.updatePost, {
+      id: id as Id<"posts">,
+      ...data,
+    })
+  } catch (error) {
+    console.error("Failed to update blog post:", error)
+    return { ok: false, message: saveErrorMessage(error) }
+  }
+
+  try {
+    await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords])
+    if (result.previousSlug) revalidatePath(`/blog/${result.previousSlug}`)
+    revalidatePath("/admin/blog")
+    revalidatePath(`/admin/blog/${id}`)
+  } catch (error) {
+    console.error("Blog post was updated, but cache refresh failed:", error)
+  }
   if (data.published) await pingIndexNow(`${SITE_URL}/blog/${data.slug}`)
+  return { ok: true }
 }
 
 export async function deletePostAction(id: string) {

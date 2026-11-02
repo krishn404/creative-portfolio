@@ -11,8 +11,9 @@ export default function NewBlogPostPage() {
     <PostEditorForm
       onSave={async (data) => {
         const result = await createPostAction(data)
-        router.push(`/admin/blog/${result.id}`)
-        router.refresh()
+        if (!result.ok) throw new Error(result.message)
+        if (!result.id) throw new Error("The post was saved, but its editor link could not be loaded.")
+        router.replace(`/admin/blog/${result.id}`)
       }}
     />
   )

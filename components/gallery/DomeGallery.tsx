@@ -144,7 +144,6 @@ export default function DomeGallery() {
         </header>
         {webglSupported === false ? <GalleryFallback /> : webglSupported === true ? <GalleryCanvas offsetX={offsetX} offsetY={offsetY} colorMode={colorMode} /> : <div className="dome-canvas-loading" role="status">Preparing the gallery…</div>}
         <div className="dome-stage-vignette" aria-hidden="true" />
-        <span className="dome-counter">{String(galleryImages.length).padStart(3, "0")} <span>PHOTOGRAPHS</span></span>
         <div className="dome-controls" aria-label="Move through gallery">
           <button type="button" aria-label="Move left" onClick={() => nudge(-1, 0)}><ArrowLeft size={16} /></button>
           <button type="button" aria-label="Move up" onClick={() => nudge(0, -1)}><ArrowUp size={16} /></button>

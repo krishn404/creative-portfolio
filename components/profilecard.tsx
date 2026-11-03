@@ -173,11 +173,11 @@ const ProfileCard = ({
   portfolioText: string
   portfolioLink: string
   statusText: string
-  Icon1: React.ElementType
-  Icon2: React.ElementType
+  Icon1: React.ElementType<{ className?: string }>
+  Icon2: React.ElementType<{ className?: string }>
   SecondaryBtnText: string
   subText: string
-  Icon3: React.ElementType
+  Icon3: React.ElementType<{ className?: string }>
   sourceContext?: string
   /** Cal.com booking link — everything after cal.com/, e.g. "yourname/30min" */
   calLink?: string

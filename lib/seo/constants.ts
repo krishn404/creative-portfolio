@@ -10,6 +10,7 @@ export const CREATOR_PROFILES = [CREATOR_INSTAGRAM, CREATOR_PINTEREST] as const
 export const BLOG_NAME = "Kezual Talks w Kant"
 export const BLOG_ALIASES = [
   "KTWK",
+  "KWTK",
   "Kezual Talks with Kant",
   "Kezual Talks w Kant",
   "Kezual Talks w/ Kant",
@@ -27,6 +28,7 @@ export const PRIMARY_KEYWORDS = [
   "Kezual Talks w Kant",
   "Kezual Talks w/ Kant",
   "KTWK",
+  "KWTK",
   "art.krixnx.xyz",
   "visual designer",
   "poster design",

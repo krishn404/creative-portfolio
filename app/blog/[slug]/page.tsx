@@ -5,7 +5,7 @@ import { notFound, permanentRedirect } from "next/navigation"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { SITE_URL, BLOG_NAME } from "@/lib/seo/constants"
-import { articleKeywords, buildBlogPostingJsonLd, buildFaqJsonLd } from "@/lib/seo/schema"
+import { articleKeywords, buildBlogPostingJsonLd } from "@/lib/seo/schema"
 import { renderPostContent } from "@/lib/blog/render-content"
 import { BlogPostContent } from "@/components/blog/BlogPostContent"
 import { getCoverOgUrl, getCoverPreviewUrl } from "@/lib/cloudinary-upload"
@@ -105,11 +105,10 @@ export default async function BlogPostPage({ params }: PageProps) {
   const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null
   const related = relatedPosts(allPosts, post)
-  const faqJsonLd = buildFaqJsonLd(post)
 
   return (
     <>
-      <JsonLd data={[...buildBlogPostingJsonLd(post, ogImage), ...(faqJsonLd ? [faqJsonLd] : [])]} />
+      <JsonLd data={buildBlogPostingJsonLd(post, ogImage)} />
       <ReadingProgress />
       <IncrementViews slug={slug} />
       <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
@@ -138,7 +137,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           {post.title}
         </h1>
         <hr className="my-6 border-black" />
-        <PostMeta publishedAt={post.publishedAt} readTime={post.readTime} views={post.views} />
+        <PostMeta publishedAt={post.publishedAt} updatedAt={post.updatedAt} readTime={post.readTime} views={post.views} />
         <hr className="my-8 border-black" />
 
         {post.coverImage && (

@@ -28,10 +28,12 @@ export function buildMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: {
-      default: defaultTitle,
-      template: "%s | Krishna Kant Maharshi",
-    },
+    title: title
+      ? { absolute: resolvedTitle }
+      : {
+          default: defaultTitle,
+          template: "%s | Krishna Kant Maharshi",
+        },
     description: resolvedDescription,
     applicationName: SITE_NAME,
     alternates: {

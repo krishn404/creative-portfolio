@@ -35,7 +35,7 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
   const tags = parseTagsInput(tagsInput)
   const keywords = parseTagsInput(keywordsInput)
   const effectiveSlug = slugTouched ? slug : slugify(title)
-  const warnings = seoWarnings({ title, seoTitle, metaDescription, excerpt, tldr, guestName, keywords, ogImageAlt, hasCover: Boolean(coverImage) })
+  const warnings = seoWarnings({ title, seoTitle, metaDescription, excerpt, tldr, guestName, keywords, ogImageAlt, hasCover: Boolean(coverImage), content })
 
   async function handleSave(publish: boolean) {
     setError(null)

@@ -12,6 +12,7 @@ import {
 } from "@/lib/seo/constants"
 import type { BlogPost, BlogPostCard } from "@/lib/blog/utils"
 import { displayDescription, postTopics } from "@/lib/blog/seo"
+import { plainTextFromContent } from "@/convex/postText"
 
 type JsonLd = Record<string, unknown>
 
@@ -40,8 +41,8 @@ function subjectFromTitle(title: string): string | undefined {
   return name
 }
 
-export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial<Pick<BlogPost, "keywords">>): string[] {
-  const subject = subjectFromTitle(post.title)
+export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial<Pick<BlogPost, "keywords" | "guestName">>): string[] {
+  const subject = post.guestName?.trim() || subjectFromTitle(post.title)
   return Array.from(
     new Set(
       [
@@ -97,7 +98,7 @@ export function buildPortfolioJsonLd(): JsonLd[] {
       "@type": "CreativeWorkSeries",
       "@id": `${SITE_URL}/about-ktwk#series`,
       name: BLOG_NAME,
-      alternateName: "KTWK",
+      alternateName: [...BLOG_ALIASES],
       description: BLOG_DESCRIPTION,
       url: `${SITE_URL}/about-ktwk`,
       creator: { "@id": personId },
@@ -131,37 +132,6 @@ export function buildPortfolioJsonLd(): JsonLd[] {
       author: { "@id": personId },
       publisher: { "@id": personId },
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "@id": `${SITE_URL}#faq`,
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "Who is kantcancook?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "kantcancook, also known as Krishna Kant Maharshi and psyx, is a visual designer and creative. The official portfolio is https://art.krixnx.xyz.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "What is Kezual Talks w Kant?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Kezual Talks w Kant (KTWK) is the interview and writing series by kantcancook, published at https://art.krixnx.xyz/blog.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "What is the official Instagram of kantcancook?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "The official Instagram profile is https://instagram.com/kantcancook.",
-          },
-        },
-      ],
-    },
   ]
 }
 
@@ -184,7 +154,7 @@ export function buildSiteIdentityJsonLd(): JsonLd[] {
       "@type": "CreativeWorkSeries",
       "@id": `${SITE_URL}/about-ktwk#series`,
       name: BLOG_NAME,
-      alternateName: "KTWK",
+      alternateName: [...BLOG_ALIASES],
       description: BLOG_DESCRIPTION,
       url: `${SITE_URL}/about-ktwk`,
       creator: { "@id": personId },
@@ -251,13 +221,15 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
       mainEntityOfPage: { "@type": "WebPage", "@id": url },
       headline: post.title,
       description: displayDescription(post),
-      image,
+      image: [image],
       url,
       datePublished: publishedAt,
       dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : publishedAt,
       inLanguage: "en",
       keywords: articleKeywords(post).join(", "),
       articleSection: BLOG_NAME,
+      wordCount: plainTextFromContent(post.content).split(/\s+/).filter(Boolean).length,
+      isAccessibleForFree: true,
       about: about.length ? about : undefined,
       author: personNode(),
       publisher: personNode(),
@@ -266,7 +238,7 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
         "@type": "CreativeWorkSeries",
         "@id": `${SITE_URL}/about-ktwk#series`,
         name: BLOG_NAME,
-        alternateName: "KTWK",
+        alternateName: [...BLOG_ALIASES],
         url: `${SITE_URL}/about-ktwk`,
       },
     },
@@ -274,24 +246,10 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "About KTWK", item: `${SITE_URL}/about-ktwk` },
-        { "@type": "ListItem", position: 2, name: "All interviews", item: `${SITE_URL}/blog` },
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: BLOG_NAME, item: `${SITE_URL}/blog` },
         { "@type": "ListItem", position: 3, name: post.title, item: url },
       ],
     },
   ]
-}
-
-export function buildFaqJsonLd(post: BlogPost): JsonLd | undefined {
-  if (!post.faq?.length) return undefined
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "@id": `${SITE_URL}/blog/${post.slug}#faq`,
-    mainEntity: post.faq.map(({ q, a }) => ({
-      "@type": "Question",
-      name: q,
-      acceptedAnswer: { "@type": "Answer", text: a },
-    })),
-  }
 }

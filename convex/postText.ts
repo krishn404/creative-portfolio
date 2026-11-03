@@ -32,8 +32,9 @@ export function buildExcerptFromBody(content: string, title: string): string {
 
 export function buildMetaDescription(excerpt: string, title: string): string {
   const source = excerpt.trim() || title.trim()
-  const expanded = `${source}. Kezual Talks w Kant (KTWK) shares interviews about artists, their work, influences, creative process, and ideas shaping culture. Read this conversation for more context.`
-  return clampSentence(expanded, 160)
+  const clean = source.replace(/[.\s]+$/, "")
+  const suffix = " Read on Kezual Talks w Kant (KTWK)."
+  return clampSentence(clean.length + suffix.length <= 160 ? `${clean}.${suffix}` : clean, 160)
 }
 
 export function buildTldr(content: string, guestName?: string): string {

@@ -1,8 +1,5 @@
-import { BLOG_NAME } from "@/lib/seo/constants"
-import { buildMetaDescription, buildTldr, plainTextFromContent } from "@/convex/postText"
+import { buildMetaDescription, buildTldr, clampSentence, plainTextFromContent } from "@/convex/postText"
 import { slugify, type BlogPost } from "@/lib/blog/utils"
-
-const BRAND = `${BLOG_NAME} (KTWK)`
 
 export function postTopics(post: Pick<BlogPost, "tags"> & Partial<Pick<BlogPost, "keywords">>): string[] {
   return Array.from(
@@ -26,8 +23,8 @@ export function displayExcerpt(post: BlogPost) {
 }
 
 export function displayDescription(post: BlogPost) {
-  const source = post.metaDescription?.trim() || displayExcerpt(post)
-  return buildMetaDescription(source, post.title).slice(0, 160)
+  const custom = post.metaDescription?.trim()
+  return custom ? clampSentence(custom, 160) : buildMetaDescription(displayExcerpt(post), post.title)
 }
 
 export function displayTldr(post: BlogPost) {
@@ -36,9 +33,27 @@ export function displayTldr(post: BlogPost) {
 
 export function documentTitle(post: BlogPost) {
   const headline = (post.seoTitle?.trim() || post.title).trim()
-  const room = 60 - ` | ${BRAND}`.length
-  const cut = headline.length <= room ? headline : `${headline.slice(0, Math.max(0, room - 1)).trim()}…`
-  return `${cut} | ${BRAND}`
+  return `${headline} | KTWK`
+}
+
+export function isIndexableTag(posts: BlogPost[], tag: string) {
+  return postsForTag(posts, tag).length >= 2
+}
+
+function contentImagesMissingAlt(content: string) {
+  try {
+    let missing = 0
+    const visit = (node: unknown) => {
+      if (!node || typeof node !== "object") return
+      const value = node as { type?: string; attrs?: { alt?: unknown }; content?: unknown[] }
+      if (value.type === "image" && (typeof value.attrs?.alt !== "string" || !value.attrs.alt.trim())) missing += 1
+      value.content?.forEach(visit)
+    }
+    visit(JSON.parse(content))
+    return missing
+  } catch {
+    return 0
+  }
 }
 
 export function relatedPosts(posts: BlogPost[], current: BlogPost, limit = 3) {
@@ -78,11 +93,13 @@ export function seoWarnings(input: {
   keywords: string[]
   ogImageAlt: string
   hasCover: boolean
+  content: string
 }) {
   const warnings: string[] = []
   const headline = input.seoTitle.trim() || input.title.trim()
-  const patterned = `${headline} | ${BRAND}`
+  const patterned = `${headline} | KTWK`
   if (!input.excerpt.trim()) warnings.push("Excerpt is empty. A short summary will be generated from the body.")
+  if (input.excerpt.trim() === input.title.trim()) warnings.push("Excerpt repeats the title. Add a factual summary of this specific piece.")
   if (!input.metaDescription.trim()) warnings.push("Meta description is empty. Search results will use the excerpt.")
   if (input.metaDescription.trim().length > 160) warnings.push("Meta description is over 160 characters.")
   if (input.metaDescription.trim() && input.metaDescription.trim().length < 150) warnings.push("Meta description is under 150 characters.")
@@ -91,7 +108,10 @@ export function seoWarnings(input: {
   const tldrWords = input.tldr.trim().split(/\s+/).filter(Boolean).length
   if (input.tldr.trim() && (tldrWords < 40 || tldrWords > 60)) warnings.push("TL;DR should contain 40 to 60 words.")
   if (!input.guestName.trim()) warnings.push("Guest name is empty. Add it when this post is an interview.")
+  if (input.guestName.trim() && input.guestName.trim().length < 3) warnings.push("Guest name looks incomplete.")
   if (input.keywords.length === 0) warnings.push("No keywords are set. Add the main topics and names.")
-  if (input.hasCover && !input.ogImageAlt.trim()) warnings.push("Cover image alt text is empty.")
+  if (input.hasCover && input.ogImageAlt.trim().length < 5) warnings.push("Cover image alt text is empty or too vague.")
+  const missingInlineAlt = contentImagesMissingAlt(input.content)
+  if (missingInlineAlt) warnings.push(`${missingInlineAlt} inline image${missingInlineAlt === 1 ? " is" : "s are"} missing descriptive alt text.`)
   return warnings
 }

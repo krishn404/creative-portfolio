@@ -148,7 +148,14 @@ export default function ElasticMesh({
     if (!container) return
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const renderer = new Renderer({ alpha: true, antialias: true, dpr: Math.min(window.devicePixelRatio || 1, 2) })
+    let renderer: Renderer
+    try {
+      renderer = new Renderer({ alpha: true, antialias: true, dpr: Math.min(window.devicePixelRatio || 1, 2) })
+    } catch {
+      // Keep the artwork visible without a GPU and leave the rest of the page intact.
+      container.style.background = image ? `url(${JSON.stringify(image)}) center / cover no-repeat` : `linear-gradient(135deg, ${color1}, ${color2})`
+      return () => { container.style.background = "" }
+    }
     const gl = renderer.gl
     gl.clearColor(0, 0, 0, 0)
     gl.enable(gl.BLEND)

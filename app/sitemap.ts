@@ -14,7 +14,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     posts = await convex.query(api.posts.getPublishedPosts)
   } catch (error) {
+    // Let Next retry instead of caching a successful but incomplete sitemap.
     console.error("Failed to add blog posts to sitemap:", error)
+    throw error
   }
 
   const lastPostChange = posts.reduce((latest, post) => {

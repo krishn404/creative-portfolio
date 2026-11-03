@@ -420,6 +420,7 @@ const FlexCarousel = ({
   const engineRef = useRef<Engine | null>(null);
   const callbacksRef = useRef<Callbacks>({ onChange, onSelect });
   const [active, setActive] = useState(0);
+  const [webglUnavailable, setWebglUnavailable] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [focusOpen, setFocusOpen] = useState(false);
 
@@ -466,15 +467,22 @@ const FlexCarousel = ({
     const container = containerRef.current;
     if (!container) return undefined;
 
-    const renderer = new Renderer({
-      dpr: Math.min(window.devicePixelRatio || 1, 2),
-      alpha: true,
-      premultipliedAlpha: true,
-      antialias: false,
-      depth: false
-    });
+    let renderer: Renderer;
+    try {
+      renderer = new Renderer({
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        alpha: true,
+        premultipliedAlpha: true,
+        antialias: false,
+        depth: false
+      });
+    } catch {
+      setWebglUnavailable(true);
+      return undefined;
+    }
     const gl = renderer.gl;
     if (!renderer.isWebgl2) {
+      setWebglUnavailable(true);
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       return undefined;
     }
@@ -1379,6 +1387,16 @@ const FlexCarousel = ({
       tabIndex={0}
     >
       <style>{STYLE}</style>
+      {webglUnavailable && (
+        <div className="flex h-full w-full gap-4 overflow-x-auto p-4">
+          {list.map((item, index) => (
+            <button key={`${item.src}-${index}`} type="button" className="h-full shrink-0" onClick={() => onSelect?.(index, item)}>
+              {/* A plain image keeps this GPU-free fallback independent of the canvas. */}
+              <img src={item.src} alt={item.alt || item.title || "Gallery artwork"} className="h-full w-auto object-contain" />
+            </button>
+          ))}
+        </div>
+      )}
       {captions && current && revealed && (
         <div
           className="pointer-events-none absolute inset-x-0 top-[calc(50%_+_var(--flex-carousel-half)_*_var(--flex-carousel-lift,1)_+_22px)] flex flex-col items-center gap-1.5 px-4 text-center animate-[flex-carousel-reveal_900ms_ease_both] motion-reduce:animate-none"

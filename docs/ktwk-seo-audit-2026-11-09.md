@@ -64,7 +64,14 @@ Migration key: `ktwk-seo-v2-2026-11-09`.
 
 The blog admin now exposes “Apply reviewed backfill” and “Revert safe changes.” Both require the existing authenticated admin session. The mutation also validates the existing server secret. Each article stores its exact before/after migration state. Revert restores only records that still equal the saved after-state; later editorial changes become conflicts and are never overwritten.
 
-This is deliberately separate from seed files. Until the authenticated admin action is run, the record table above is prepared code, not a claim that live content changed.
+This is deliberately separate from seed files. The secret-authenticated service mutation was applied to the production Convex deployment on 2026-11-09 after the code deployment. All eight expected slugs were updated; there were no missing records or conflicts. The saved snapshots remain available to the authenticated “Revert safe changes” action.
+
+## Deployment status
+
+- Git commit `97f766f` was pushed to `origin/main`.
+- The production Convex schema/functions were deployed with no deleted indexes.
+- The reviewed backfill updated all eight production article records with no conflicts.
+- The linked Vercel production deployment completed successfully. A follow-up deployment was triggered after the data migration so statically generated article HTML would include the updated records immediately rather than waiting for ISR.
 
 ## Future publishing workflow
 

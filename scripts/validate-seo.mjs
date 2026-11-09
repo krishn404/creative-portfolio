@@ -56,10 +56,12 @@ export function inspectHtml(html) {
 
   return {
     title: cleanText(first(html, /<title[^>]*>([\s\S]*?)<\/title>/i)),
-    description: first(html, /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/i),
+    description: cleanText(first(html, /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/i)),
+    metaKeywords: first(html, /<meta[^>]+name=["']keywords["'][^>]+content=["']([^"']*)/i),
     canonical: first(html, /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']*)/i),
     robots: first(html, /<meta[^>]+name=["']robots["'][^>]+content=["']([^"']*)/i),
     h1: all(html, /<h1\b[^>]*>([\s\S]*?)<\/h1>/gi).map(cleanText),
+    h2: all(html, /<h2\b[^>]*>([\s\S]*?)<\/h2>/gi).map(cleanText),
     hrefs: all(html, /<a\b[^>]+href=["']([^"']+)["']/gi),
     jsonLd,
     jsonLdErrors,
@@ -97,12 +99,13 @@ export async function validateSite(baseUrl, canonicalUrl = baseUrl) {
   const fail = (message) => errors.push(message)
   const warn = (message) => warnings.push(message)
 
-  const [{ response: robotsResponse, text: robots }, { response: sitemapResponse, text: sitemap }, { response: blogResponse, text: blogHtml }] =
-    await Promise.all([fetchText(`${base}/robots.txt`), fetchText(`${base}/sitemap.xml`), fetchText(`${base}/blog`)])
+  const [{ response: robotsResponse, text: robots }, { response: sitemapResponse, text: sitemap }, { response: blogResponse, text: blogHtml }, missingArticle] =
+    await Promise.all([fetchText(`${base}/robots.txt`), fetchText(`${base}/sitemap.xml`), fetchText(`${base}/blog`), fetchText(`${base}/blog/seo-validation-missing-article` )])
 
   if (!robotsResponse.ok) fail(`robots.txt returned ${robotsResponse.status}`)
   if (!sitemapResponse.ok) fail(`sitemap.xml returned ${sitemapResponse.status}`)
   if (!blogResponse.ok) fail(`Blog index returned ${blogResponse.status}`)
+  if (missingArticle.response.status !== 404) fail(`Missing article route returned ${missingArticle.response.status}, expected 404`)
   if (/Disallow:\s*\/blog(?:\s|$)/i.test(robots)) fail("robots.txt blocks /blog")
   if (!robots.includes(`Sitemap: ${canonicalBase}/sitemap.xml`)) fail("robots.txt does not reference the canonical sitemap")
 
@@ -117,6 +120,7 @@ export async function validateSite(baseUrl, canonicalUrl = baseUrl) {
     .filter((url) => /^https?:\/\/[^/]+\/blog\/[^/?#]+$/.test(url)))]
   const sitemapArticles = sitemapUrls.filter((url) => /^https?:\/\/[^/]+\/blog\/[^/?#]+$/.test(url))
   for (const url of linkedArticles) if (!sitemapArticles.includes(url)) fail(`Blog-linked article missing from sitemap: ${url}`)
+  for (const url of sitemapArticles) if (!linkedArticles.includes(url)) fail(`Sitemap article lacks a crawlable link from the blog hub: ${url}`)
 
   await mapLimit(sitemapUrls, 8, async (url) => {
     try {
@@ -130,6 +134,7 @@ export async function validateSite(baseUrl, canonicalUrl = baseUrl) {
         if (html.canonical !== url) fail(`Wrong article canonical: ${url} -> ${html.canonical || "missing"}`)
         if (!html.title) fail(`Missing article title: ${url}`)
         if (!html.description) fail(`Missing article description: ${url}`)
+        if (html.metaKeywords) fail(`Article emits a meta-keywords field: ${url}`)
         if (/noindex/i.test(html.robots)) fail(`Article is noindex: ${url}`)
         if (html.h1.length !== 1) fail(`Article must have exactly one H1 (${html.h1.length}): ${url}`)
         if (html.jsonLdErrors.length) fail(`Invalid JSON-LD: ${url}`)
@@ -137,6 +142,17 @@ export async function validateSite(baseUrl, canonicalUrl = baseUrl) {
         if (!posting) fail(`Missing BlogPosting JSON-LD: ${url}`)
         else for (const field of ["headline", "description", "author", "publisher", "datePublished", "dateModified", "image", "mainEntityOfPage"]) {
           if (!posting[field]) fail(`BlogPosting.${field} is missing: ${url}`)
+        }
+        if (posting) {
+          if (posting.headline !== html.h1[0]) fail(`BlogPosting headline differs from the visible H1: ${url}`)
+          if (posting.description !== html.description) fail(`BlogPosting description differs from the meta description: ${url}`)
+          const mainEntityUrl = typeof posting.mainEntityOfPage === "string" ? posting.mainEntityOfPage : posting.mainEntityOfPage?.["@id"]
+          if (mainEntityUrl !== url) fail(`BlogPosting mainEntityOfPage differs from canonical: ${url}`)
+          if (!["Interview", "Review", "Article"].includes(posting.genre)) fail(`BlogPosting.genre is missing or invalid: ${url}`)
+          const summary = html.h2[0] ?? ""
+          if (posting.genre === "Review" && !/review/i.test(summary)) fail(`Review uses a non-review summary heading: ${url}`)
+          if (posting.genre === "Interview" && !/interview/i.test(summary)) fail(`Interview uses a non-interview summary heading: ${url}`)
+          if (["Review", "Interview"].includes(posting.genre) && !posting.mentions?.length) fail(`Named ${posting.genre.toLowerCase()} has no subject in BlogPosting.mentions: ${url}`)
         }
         if (html.articleWordCount < 250) warn(`Thin article body (${html.articleWordCount} words): ${url}`)
         if (html.missingImageAlt) warn(`${html.missingImageAlt} article image(s) lack alt text: ${url}`)

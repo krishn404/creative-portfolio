@@ -8,6 +8,7 @@ export const CREATOR_INSTAGRAM = "https://instagram.com/kantcancook"
 export const CREATOR_PINTEREST = "https://pinterest.com/psyxyx"
 export const CREATOR_PROFILES = [CREATOR_INSTAGRAM, CREATOR_PINTEREST] as const
 export const BLOG_NAME = "Kezual Talks w Kant"
+export const BLOG_DISPLAY_NAME = "KTWK — Kezual Talks with Kant"
 export const BLOG_ALIASES = [
   "KTWK",
   "KWTK",
@@ -16,7 +17,7 @@ export const BLOG_ALIASES = [
   "Kezual Talks w/ Kant",
 ] as const
 export const BLOG_DESCRIPTION =
-  "Kezual Talks w Kant (KTWK): conversations, interviews, reviews, and notes on artists, music, and the people shaping culture."
+  "KTWK — Kezual Talks with Kant: conversations, interviews, reviews, and notes on artists, music, and the people shaping culture."
 export const DEFAULT_OG_IMAGE = "/api/og?title=Krishna%20Kant%20Maharshi"
 
 export const PRIMARY_KEYWORDS = [

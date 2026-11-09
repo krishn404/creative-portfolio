@@ -53,6 +53,8 @@ export type BlogFaq = {
   a: string
 }
 
+export type ArticleType = "interview" | "review" | "article"
+
 export type BlogPost = {
   id: string
   title: string
@@ -68,7 +70,10 @@ export type BlogPost = {
   seoTitle?: string
   metaDescription?: string
   keywords?: string[]
+  articleType?: ArticleType
   guestName?: string
+  subjectAliases?: string[]
+  subjectSameAs?: string[]
   ogImageAlt?: string
   faq?: BlogFaq[]
   tldr?: string
@@ -85,18 +90,22 @@ export type PostWriteInput = {
   coverImage?: string
   tags: string[]
   keywords: string[]
+  articleType: ArticleType
   published: boolean
   readTime: string
   seoTitle?: string
   metaDescription?: string
   guestName?: string
+  subjectAliases: string[]
+  subjectSameAs: string[]
   ogImageAlt?: string
   faq: BlogFaq[]
   tldr?: string
   series?: string
 }
 
-export type BlogPostCard = Pick<BlogPost, "id" | "title" | "slug" | "excerpt" | "tags" | "publishedAt" | "readTime" | "views"> & Pick<BlogPost, "keywords">
+export type BlogPostCard = Pick<BlogPost, "id" | "title" | "slug" | "excerpt" | "tags" | "publishedAt" | "readTime" | "views"> &
+  Pick<BlogPost, "keywords" | "articleType" | "guestName" | "subjectAliases">
 
 export function toBlogPostCard(post: BlogPost): BlogPostCard {
   return {
@@ -109,5 +118,8 @@ export function toBlogPostCard(post: BlogPost): BlogPostCard {
     readTime: post.readTime,
     views: post.views,
     keywords: post.keywords ?? [],
+    articleType: post.articleType,
+    guestName: post.guestName,
+    subjectAliases: post.subjectAliases ?? [],
   }
 }

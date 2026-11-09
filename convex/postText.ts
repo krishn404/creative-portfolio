@@ -1,5 +1,7 @@
 const SERIES_NAME = "Kezual Talks w Kant"
 
+export type ArticleType = "interview" | "review" | "article"
+
 function collectText(value: unknown): string {
   if (!value || typeof value !== "object") return ""
   const node = value as { text?: unknown; content?: unknown }
@@ -34,22 +36,34 @@ export function buildMetaDescription(excerpt: string, title: string): string {
   const source = excerpt.trim() || title.trim()
   const clean = source.replace(/[.\s]+$/, "")
   const suffix = " Read on Kezual Talks w Kant (KTWK)."
-  return clampSentence(clean.length + suffix.length <= 160 ? `${clean}.${suffix}` : clean, 160)
+  return clean.length + suffix.length <= 180 ? `${clean}.${suffix}` : clean
 }
 
-export function buildTldr(content: string, guestName?: string): string {
+export function buildTldr(content: string, guestName?: string, articleType: ArticleType = "article"): string {
   const words = plainTextFromContent(content).split(/\s+/).filter(Boolean)
   const guest = guestName?.trim()
-  const lead = guest
-    ? `In this conversation, Krishna Kant Maharshi talks with ${guest}.`
-    : "In this piece, Krishna Kant Maharshi talks through the subject in his own words."
+  const lead = articleType === "interview" && guest
+    ? `In this KTWK interview, Krishna Kant Maharshi talks with ${guest}.`
+    : articleType === "review"
+      ? "In this KTWK review, Krishna Kant Maharshi looks closely at the work."
+      : "In this KTWK article, Krishna Kant Maharshi introduces the subject."
   const leadWords = lead.split(/\s+/).filter(Boolean)
   const room = Math.max(0, 55 - leadWords.length)
-  const combined = [...leadWords, ...words.slice(0, room)].slice(0, 60)
-  if (combined.length < 40) {
-    combined.push(..."The conversation also offers context on the guest work influences and the ideas behind the topics discussed in this KTWK interview.".split(/\s+/).slice(0, 40 - combined.length))
-  }
-  return combined.join(" ")
+  return [...leadWords, ...words.slice(0, room)].slice(0, 60).join(" ")
+}
+
+export function inferArticleType(input: {
+  articleType?: ArticleType
+  title?: string
+  slug?: string
+  tags?: string[]
+  guestName?: string
+}): ArticleType {
+  if (input.articleType) return input.articleType
+  const searchable = [input.title, input.slug, ...(input.tags ?? [])].filter(Boolean).join(" ").toLowerCase()
+  if (/\breview\b/.test(searchable)) return "review"
+  if (input.guestName?.trim()) return "interview"
+  return "article"
 }
 
 export function defaultSeries(series?: string) {

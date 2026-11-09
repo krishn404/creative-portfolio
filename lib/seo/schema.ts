@@ -11,7 +11,7 @@ import {
   SITE_URL,
 } from "@/lib/seo/constants"
 import type { BlogPost, BlogPostCard } from "@/lib/blog/utils"
-import { displayDescription, postTopics } from "@/lib/blog/seo"
+import { articleTypeLabel, articleTypeOf, displayDescription, postTopics } from "@/lib/blog/seo"
 import { plainTextFromContent } from "@/convex/postText"
 
 type JsonLd = Record<string, unknown>
@@ -34,25 +34,15 @@ function personNode() {
   }
 }
 
-function subjectFromTitle(title: string): string | undefined {
-  const match = title.match(/^([A-Z][A-Za-z'.-]+(?:\s+[A-Z][A-Za-z'.-]+){0,3})\b/)
-  const name = match?.[1]?.trim()
-  if (!name || name.length < 3) return undefined
-  return name
-}
-
-export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial<Pick<BlogPost, "keywords" | "guestName">>): string[] {
-  const subject = post.guestName?.trim() || subjectFromTitle(post.title)
+export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial<Pick<BlogPost, "keywords" | "guestName" | "subjectAliases">>): string[] {
+  const subject = post.guestName?.trim()
   return Array.from(
     new Set(
       [
         post.title,
         subject,
+        ...(post.subjectAliases ?? []),
         ...postTopics(post),
-        CREATOR_NAME,
-        ...CREATOR_ALIASES,
-        BLOG_NAME,
-        ...BLOG_ALIASES,
       ].filter((value): value is string => Boolean(value)),
     ),
   )
@@ -204,8 +194,15 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
   const url = `${SITE_URL}/blog/${post.slug}`
   const publishedAt = post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined
   const subject = post.guestName?.trim()
+  const subjectNode = subject ? {
+    "@type": "Person",
+    name: subject,
+    alternateName: post.subjectAliases?.length ? post.subjectAliases : undefined,
+    sameAs: post.subjectSameAs?.length ? post.subjectSameAs : undefined,
+  } : undefined
+  const typeLabel = articleTypeLabel(articleTypeOf(post))
   const about = [
-    ...(subject ? [{ "@type": "Person", name: subject }] : []),
+    ...(subjectNode ? [subjectNode] : []),
     ...postTopics(post).map((tag) => ({ "@type": "Thing", name: tag })),
   ]
 
@@ -227,13 +224,14 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
       dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : publishedAt,
       inLanguage: "en",
       keywords: articleKeywords(post).join(", "),
-      articleSection: BLOG_NAME,
+      genre: typeLabel,
+      articleSection: `${BLOG_NAME}: ${typeLabel}`,
       wordCount: plainTextFromContent(post.content).split(/\s+/).filter(Boolean).length,
       isAccessibleForFree: true,
       about: about.length ? about : undefined,
       author: personNode(),
       publisher: personNode(),
-      mentions: post.guestName ? [{ "@type": "Person", name: post.guestName }] : undefined,
+      mentions: subjectNode ? [subjectNode] : undefined,
       isPartOf: {
         "@type": "CreativeWorkSeries",
         "@id": `${SITE_URL}/about-ktwk#series`,

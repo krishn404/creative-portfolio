@@ -74,7 +74,12 @@ export default defineSchema({
     seoTitle: v.optional(v.string()),
     metaDescription: v.optional(v.string()),
     keywords: v.optional(v.array(v.string())),
+    articleType: v.optional(
+      v.union(v.literal("interview"), v.literal("review"), v.literal("article")),
+    ),
     guestName: v.optional(v.string()),
+    subjectAliases: v.optional(v.array(v.string())),
+    subjectSameAs: v.optional(v.array(v.string())),
     ogImageAlt: v.optional(v.string()),
     faq: v.optional(v.array(v.object({ q: v.string(), a: v.string() }))),
     tldr: v.optional(v.string()),
@@ -89,6 +94,17 @@ export default defineSchema({
     fromSlug: v.string(),
     toSlug: v.string(),
   }).index("by_from_slug", ["fromSlug"]),
+
+  postSeoMigrations: defineTable({
+    migrationKey: v.string(),
+    postId: v.id("posts"),
+    beforeJson: v.string(),
+    afterJson: v.string(),
+    appliedAt: v.number(),
+    revertedAt: v.optional(v.number()),
+  })
+    .index("by_migration", ["migrationKey"])
+    .index("by_migration_post", ["migrationKey", "postId"]),
 
   postViewRecords: defineTable({
     postId: v.id("posts"),

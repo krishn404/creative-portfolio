@@ -7,6 +7,7 @@
     "dev": "next dev",
     "test": "node --test",
     "seo:validate": "node scripts/validate-seo.mjs",
+    "seo:inventory": "node scripts/audit-blog-inventory.mjs",
     "gallery:optimize": "node scripts/optimize-gallery.mjs",
     "gallery:upload": "node scripts/upload-365-to-cloudinary.mjs",
     "lint": "eslint .",

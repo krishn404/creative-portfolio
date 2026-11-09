@@ -4,8 +4,8 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { NovelEditor } from "./NovelEditor"
 import { CoverImageUpload } from "./CoverImageUpload"
-import { computeReadTime, parseTagsInput, slugify, type BlogPost, type PostWriteInput, type BlogFaq } from "@/lib/blog/utils"
-import { seoWarnings, displayDescription, documentTitle } from "@/lib/blog/seo"
+import { computeReadTime, parseTagsInput, slugify, type ArticleType, type BlogPost, type PostWriteInput, type BlogFaq } from "@/lib/blog/utils"
+import { articleTypeOf, defaultSeoTitle, seoWarnings, displayDescription, documentTitle } from "@/lib/blog/seo"
 
 type PostEditorFormProps = {
   post?: BlogPost
@@ -23,19 +23,24 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
   const [seoTitle, setSeoTitle] = useState(post?.seoTitle ?? "")
   const [metaDescription, setMetaDescription] = useState(post?.metaDescription ?? "")
   const [keywordsInput, setKeywordsInput] = useState(post?.keywords?.join(", ") ?? "")
+  const [articleType, setArticleType] = useState<ArticleType>(post ? articleTypeOf(post) : "article")
   const [guestName, setGuestName] = useState(post?.guestName ?? "")
+  const [subjectAliasesInput, setSubjectAliasesInput] = useState(post?.subjectAliases?.join(", ") ?? "")
+  const [subjectSameAsInput, setSubjectSameAsInput] = useState(post?.subjectSameAs?.join("\n") ?? "")
   const [ogImageAlt, setOgImageAlt] = useState(post?.ogImageAlt ?? "")
   const [tldr, setTldr] = useState(post?.tldr ?? "")
   const [faq, setFaq] = useState<BlogFaq[]>(post?.faq ?? [])
-  const [showSeoWarnings, setShowSeoWarnings] = useState(false)
   const [published, setPublished] = useState(post?.published ?? false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const tags = parseTagsInput(tagsInput)
   const keywords = parseTagsInput(keywordsInput)
+  const subjectAliases = Array.from(new Map(subjectAliasesInput.split(",").map((value) => value.trim()).filter(Boolean).map((value) => [value.toLowerCase(), value])).values())
+  const subjectSameAs = Array.from(new Set(subjectSameAsInput.split(/[\n,]/).map((value) => value.trim()).filter(Boolean)))
   const effectiveSlug = slugTouched ? slug : slugify(title)
-  const warnings = seoWarnings({ title, seoTitle, metaDescription, excerpt, tldr, guestName, keywords, ogImageAlt, hasCover: Boolean(coverImage), content })
+  const previewPost = { title, seoTitle, metaDescription, excerpt, content, articleType, guestName, subjectAliases, subjectSameAs } as BlogPost
+  const warnings = seoWarnings({ title, seoTitle, metaDescription, excerpt, tldr, guestName, articleType, subjectAliases, subjectSameAs, keywords, ogImageAlt, hasCover: Boolean(coverImage), content })
 
   async function handleSave(publish: boolean) {
     setError(null)
@@ -52,20 +57,26 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
       return
     }
 
-    const readTime = computeReadTime(content)
-    const shouldPublish = publish ? true : published
-    if (publish && warnings.length > 0 && !showSeoWarnings) {
-      setShowSeoWarnings(true)
-      setError("Review the SEO notes above, then choose PUBLISH again to continue.")
+    const invalidIdentityUrl = subjectSameAs.find((value) => {
+      try {
+        return !["http:", "https:"].includes(new URL(value).protocol)
+      } catch {
+        return true
+      }
+    })
+    if (invalidIdentityUrl) {
+      setError(`Verified identity URL is invalid: ${invalidIdentityUrl}`)
       return
     }
 
+    const readTime = computeReadTime(content)
+    const shouldPublish = publish ? true : published
     startTransition(async () => {
       try {
         await onSave({
           title: title.trim(),
           slug: effectiveSlug.trim(),
-          excerpt: excerpt.trim() || title.trim(),
+          excerpt: excerpt.trim(),
           content,
           coverImage: coverImage || undefined,
           tags,
@@ -74,7 +85,10 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
           seoTitle: seoTitle.trim() || undefined,
           metaDescription: metaDescription.trim() || undefined,
           keywords,
+          articleType,
           guestName: guestName.trim() || undefined,
+          subjectAliases,
+          subjectSameAs,
           ogImageAlt: ogImageAlt.trim() || undefined,
           tldr: tldr.trim() || undefined,
           faq: faq.filter((item) => item.q.trim() && item.a.trim()),
@@ -127,26 +141,47 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
         </div>
 
         <section className="space-y-4 border border-black p-4" aria-labelledby="seo-panel-title">
-          <h2 id="seo-panel-title" className="blog-font-headline text-2xl">SEO and answer details</h2>
-          <label className="block text-sm">SEO title <span className="text-xs text-[var(--text-secondary)]">{documentTitle({ title, seoTitle } as BlogPost).length}/60</span>
-            <input value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={120} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder="Uses post title when empty" />
+          <h2 id="seo-panel-title" className="blog-font-headline text-2xl">Article identity and search appearance</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm">Article type
+              <select value={articleType} onChange={(event) => setArticleType(event.target.value as ArticleType)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2">
+                <option value="interview">Interview</option>
+                <option value="review">Review</option>
+                <option value="article">Article / other writing</option>
+              </select>
+            </label>
+            <label className="block text-sm">Author / interviewer
+              <input value="Krishna Kant Maharshi" readOnly className="mt-1 w-full border border-black bg-black/5 px-3 py-2 text-[var(--text-secondary)]" />
+            </label>
+          </div>
+          <label className="block text-sm">Verified artist / guest / subject display name
+            <input value={guestName} onChange={(event) => setGuestName(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder={articleType === "interview" ? "Required context for interviews" : "Add when the piece is about a named artist"} />
           </label>
-          <label className="block text-sm">Meta description <span className="text-xs text-[var(--text-secondary)]">{metaDescription.length}/160</span>
+          <label className="block text-sm">Verified aliases, comma-separated
+            <input value={subjectAliasesInput} onChange={(event) => setSubjectAliasesInput(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder="Only names confirmed by the article or artist" />
+          </label>
+          <label className="block text-sm">Verified identity links, one per line
+            <textarea value={subjectSameAsInput} onChange={(event) => setSubjectSameAsInput(event.target.value)} rows={2} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder="Official artist site or profile URLs only" />
+          </label>
+          <label className="block text-sm">SEO title <span className="text-xs text-[var(--text-secondary)]">{documentTitle(previewPost).length} characters; guidance only</span>
+            <input value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={180} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" placeholder={defaultSeoTitle(previewPost) || "Generated from article type, subject and headline"} />
+            <button type="button" onClick={() => setSeoTitle("")} className="mt-1 text-xs underline">Reset to deterministic default</button>
+          </label>
+          <label className="block text-sm">Meta description <span className="text-xs text-[var(--text-secondary)]">{metaDescription.length} characters; search engines may show a different snippet</span>
             <textarea value={metaDescription} onChange={(event) => setMetaDescription(event.target.value)} rows={3} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+            <button type="button" onClick={() => setMetaDescription("")} className="mt-1 text-xs underline">Reset to excerpt-based default</button>
           </label>
           <label className="block text-sm">Excerpt
             <textarea value={excerpt} onChange={(event) => setExcerpt(event.target.value)} rows={2} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
           </label>
-          <label className="block text-sm">Keywords, comma-separated
+          <label className="block text-sm">Additional topics, comma-separated
             <input value={keywordsInput} onChange={(event) => setKeywordsInput(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
-          </label>
-          <label className="block text-sm">Guest name
-            <input value={guestName} onChange={(event) => setGuestName(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">Used for internal discovery and structured article topics, not as a meta-keywords ranking field.</span>
           </label>
           <label className="block text-sm">Cover image alt text
             <input value={ogImageAlt} onChange={(event) => setOgImageAlt(event.target.value)} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
           </label>
-          <label className="block text-sm">TL;DR, 40 to 60 words
+          <label className="block text-sm">Visible article summary, roughly 40 to 60 words
             <textarea value={tldr} onChange={(event) => setTldr(event.target.value)} rows={3} className="mt-1 w-full border border-black bg-[var(--surface)] px-3 py-2" />
           </label>
           <div>
@@ -158,11 +193,11 @@ export function PostEditorForm({ post, onSave }: PostEditorFormProps) {
             <button type="button" onClick={() => setFaq([...faq, { q: "", a: "" }])} className="text-sm underline">Add FAQ</button>
           </div>
           <div className="border border-black bg-white p-3 text-black" aria-label="Google search snippet preview">
-            <p className="text-lg text-blue-800">{documentTitle({ title, seoTitle } as BlogPost)}</p>
+            <p className="text-lg text-blue-800">{documentTitle(previewPost)}</p>
             <p className="text-xs text-green-800">art.krixnx.xyz / blog / {slug || "post-slug"}</p>
-            <p className="text-sm">{displayDescription({ title, excerpt: metaDescription || excerpt, metaDescription } as BlogPost)}</p>
+            <p className="text-sm">{displayDescription(previewPost)}</p>
           </div>
-          {showSeoWarnings && warnings.length > 0 && <ul className="list-disc pl-5 text-sm text-amber-800" role="status">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
+          {warnings.length > 0 && <div className="border border-amber-700 bg-amber-50 p-3 text-amber-900"><p className="text-sm font-medium">Review before publishing (advisory)</p><ul className="mt-2 list-disc pl-5 text-sm" role="status">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div>}
         </section>
 
         <div>

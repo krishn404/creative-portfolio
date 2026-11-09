@@ -1,7 +1,7 @@
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { AdminBlogDashboard } from "@/components/blog/AdminBlogDashboard"
-import { deletePostAction, togglePublishPostAction } from "./actions"
+import { applyKtwkSeoBackfillAction, deletePostAction, revertKtwkSeoBackfillAction, togglePublishPostAction } from "./actions"
 import type { BlogPost } from "@/lib/blog/utils"
 
 export default async function AdminBlogPage() {
@@ -17,6 +17,8 @@ export default async function AdminBlogPage() {
       initialPosts={posts}
       onDelete={deletePostAction}
       onTogglePublish={togglePublishPostAction}
+      onApplySeoBackfill={applyKtwkSeoBackfillAction}
+      onRevertSeoBackfill={revertKtwkSeoBackfillAction}
     />
   )
 }

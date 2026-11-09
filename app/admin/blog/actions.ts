@@ -73,7 +73,7 @@ export async function updatePostAction(
   id: string,
   data: PostWriteInput,
 ) : Promise<SavePostResult> {
-  let result: { ok: boolean; previousSlug?: string }
+  let result: { ok: boolean; changed: boolean; previousSlug?: string; previousTags: string[]; previousKeywords: string[] }
   try {
     await assertAdminSession()
     result = await convex.mutation(api.posts.updatePost, {
@@ -86,7 +86,7 @@ export async function updatePostAction(
   }
 
   try {
-    await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords])
+    await refreshBlogPaths(data.slug, [...data.tags, ...data.keywords, ...result.previousTags, ...result.previousKeywords])
     if (result.previousSlug) revalidatePath(`/blog/${result.previousSlug}`)
     revalidatePath("/admin/blog")
     revalidatePath(`/admin/blog/${id}`)
@@ -100,7 +100,7 @@ export async function updatePostAction(
 export async function deletePostAction(id: string) {
   await assertAdminSession()
   const result = await convex.mutation(api.posts.deletePost, { id: id as Id<"posts"> })
-  await refreshBlogPaths(result.slug)
+  await refreshBlogPaths(result.slug, [...result.tags, ...result.keywords])
   revalidatePath("/admin/blog")
 }
 
@@ -117,8 +117,30 @@ export async function resetAllPostViewsAction() {
 export async function togglePublishPostAction(id: string) {
   await assertAdminSession()
   const result = await convex.mutation(api.posts.togglePublish, { id: id as Id<"posts"> })
-  await refreshBlogPaths(result.slug)
+  await refreshBlogPaths(result.slug, [...result.tags, ...result.keywords])
   revalidatePath("/admin/blog")
   if (result.published) await pingIndexNow(`${SITE_URL}/blog/${result.slug}`)
+  return result
+}
+
+function blogMutationSecret() {
+  return process.env.BLOG_VIEW_SECRET || process.env.ADMIN_SESSION_TOKEN || "dev-blog-view-secret"
+}
+
+export async function applyKtwkSeoBackfillAction() {
+  await assertAdminSession()
+  const result = await convex.mutation(api.posts.applyKtwkSeoBackfill, { secret: blogMutationSecret() })
+  await refreshBlogPaths()
+  revalidatePath("/blog/[slug]", "page")
+  revalidatePath("/admin/blog")
+  return result
+}
+
+export async function revertKtwkSeoBackfillAction() {
+  await assertAdminSession()
+  const result = await convex.mutation(api.posts.revertKtwkSeoBackfill, { secret: blogMutationSecret() })
+  await refreshBlogPaths()
+  revalidatePath("/blog/[slug]", "page")
+  revalidatePath("/admin/blog")
   return result
 }

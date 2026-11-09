@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { BlogPost } from "@/lib/blog/utils"
@@ -10,21 +10,19 @@ type AdminBlogDashboardProps = {
   initialPosts: BlogPost[]
   onDelete: (id: string) => Promise<void>
   onTogglePublish: (id: string) => Promise<unknown>
+  onApplySeoBackfill: () => Promise<Record<string, unknown>>
+  onRevertSeoBackfill: () => Promise<Record<string, unknown>>
 }
 
-export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish }: AdminBlogDashboardProps) {
-  const [posts, setPosts] = useState(initialPosts)
+export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish, onApplySeoBackfill, onRevertSeoBackfill }: AdminBlogDashboardProps) {
+  const posts = initialPosts
   const [isPending, startTransition] = useTransition()
+  const [migrationMessage, setMigrationMessage] = useState("")
   const router = useRouter()
-
-  useEffect(() => {
-    setPosts(initialPosts)
-  }, [initialPosts])
 
   function handleDelete(id: string) {
     startTransition(async () => {
       await onDelete(id)
-      setPosts((prev) => prev.filter((p) => p.id !== id))
       router.refresh()
     })
   }
@@ -32,18 +30,23 @@ export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish }: 
   function handleToggle(id: string) {
     startTransition(async () => {
       await onTogglePublish(id)
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                published: !p.published,
-                publishedAt: !p.published ? Date.now() : undefined,
-              }
-            : p,
-        ),
-      )
       router.refresh()
+    })
+  }
+
+  function runSeoMigration(mode: "apply" | "revert") {
+    const message = mode === "apply"
+      ? "Apply the reviewed KTWK article-type, subject, Vidhu metadata and image-alt backfill? Existing migration conflicts will be skipped."
+      : "Revert only unchanged records from the KTWK SEO backfill? Later manual edits will be protected as conflicts."
+    if (!window.confirm(message)) return
+    startTransition(async () => {
+      try {
+        const result = mode === "apply" ? await onApplySeoBackfill() : await onRevertSeoBackfill()
+        setMigrationMessage(JSON.stringify(result))
+        router.refresh()
+      } catch (error) {
+        setMigrationMessage(error instanceof Error ? error.message : "SEO migration failed")
+      }
     })
   }
 
@@ -64,6 +67,18 @@ export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish }: 
         </Link>
       </div>
 
+      <section className="mb-6 border border-black bg-[var(--surface)] p-4" aria-labelledby="seo-migration-title">
+        <h2 id="seo-migration-title" className="blog-font-headline text-xl">KTWK SEO record backfill</h2>
+        <p className="mt-2 max-w-3xl text-sm text-[var(--text-secondary)]">
+          Applies the reviewed article types, verified subject names, one Vidhu Kota search listing update, and factual inline image descriptions. It is idempotent, stores before/after snapshots, and skips records changed after the migration.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button type="button" disabled={isPending} onClick={() => runSeoMigration("apply")} className="border border-black bg-black px-4 py-2 text-sm text-white disabled:opacity-50">Apply reviewed backfill</button>
+          <button type="button" disabled={isPending} onClick={() => runSeoMigration("revert")} className="border border-black px-4 py-2 text-sm disabled:opacity-50">Revert safe changes</button>
+        </div>
+        {migrationMessage && <p className="blog-font-mono mt-3 break-words text-xs" role="status">{migrationMessage}</p>}
+      </section>
+
       <div className="overflow-x-auto border border-black bg-[var(--surface)]">
         <table className="w-full min-w-[720px] text-left">
           <thead>
@@ -82,7 +97,7 @@ export function AdminBlogDashboard({ initialPosts, onDelete, onTogglePublish }: 
             {posts.length === 0 ? (
               <tr>
                 <td colSpan={7} className="blog-font-mono px-3 py-12 text-center text-sm text-[var(--text-secondary)]">
-                  // no posts yet.
+                  No posts yet.
                 </td>
               </tr>
             ) : (

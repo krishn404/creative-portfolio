@@ -407,14 +407,18 @@ export default function Gallery() {
                       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
                         <div className="min-w-0">
                           <p className="text-xs uppercase tracking-[0.2em] text-white/75">
-                            {work.tag || displayWorkCategory(work.category)}
+                            {displayWorkCategory(work.category)}
                           </p>
                           <h3 className="mt-1 line-clamp-1 text-base font-medium text-white">{work.title}</h3>
                         </div>
                         {work.year ? <p className="shrink-0 text-sm text-white/85">{work.year}</p> : null}
                       </div>
 
-                      {getWorkMedia(work).length > 1 ? (
+                      {work.tag ? (
+                        <div className="absolute right-3 top-3 max-w-[calc(100%-1.5rem)] truncate rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-xs text-white backdrop-blur-sm">
+                          {work.tag}
+                        </div>
+                      ) : getWorkMedia(work).length > 1 ? (
                         <div className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-xs text-white backdrop-blur-sm">
                           {getWorkMedia(work).length} images
                         </div>

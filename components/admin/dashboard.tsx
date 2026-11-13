@@ -269,6 +269,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       title: work.title,
       img: work.img,
       year: work.year,
+      tag: work.tag?.trim() || undefined,
+      description: work.description?.trim() || undefined,
       publicId: work.publicId,
       category: work.category as WorkCategory,
       status: work.status,
@@ -962,7 +964,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                 placeholder="Official artwork, fan poster, concept creative work…"
                 maxLength={80}
               />
-              <p className="text-xs text-muted-foreground">Shown on the public work card instead of its category.</p>
+              <p className="text-xs text-muted-foreground">Shown on the public work card in place of its image-count pill.</p>
             </div>
 
             <div className="space-y-1.5">

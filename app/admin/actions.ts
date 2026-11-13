@@ -18,6 +18,7 @@ const workSchema = z.object({
   year: z.string().max(10).optional(),
   tag: z.string().max(80).optional(),
   description: z.string().max(2000).optional(),
+  showInAbout: z.boolean().optional(),
   publicId: z.string().optional(),
   category: z.enum(categories),
   status: z.enum(statuses).optional(),
@@ -105,6 +106,7 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       category: parsed.data.category,
       status: parsed.data.status || "draft",
       media: parsed.data.media,
+      showInAbout: parsed.data.showInAbout,
     })
 
     return {
@@ -118,6 +120,7 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       category: parsed.data.category,
       status: parsed.data.status || "draft",
       media: parsed.data.media,
+      showInAbout: parsed.data.showInAbout,
     }
   } catch (error) {
     console.error("Convex mutation error in upsertWorkAction:", error)

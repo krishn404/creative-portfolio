@@ -8,9 +8,13 @@
  * @module
  */
 
+import type * as broadcasts from "../broadcasts.js";
 import type * as content from "../content.js";
+import type * as newsletter from "../newsletter.js";
+import type * as newsletterTemplate from "../newsletterTemplate.js";
 import type * as postText from "../postText.js";
 import type * as posts from "../posts.js";
+import type * as subscribers from "../subscribers.js";
 import type * as works from "../works.js";
 
 import type {
@@ -20,9 +24,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  broadcasts: typeof broadcasts;
   content: typeof content;
+  newsletter: typeof newsletter;
+  newsletterTemplate: typeof newsletterTemplate;
   postText: typeof postText;
   posts: typeof posts;
+  subscribers: typeof subscribers;
   works: typeof works;
 }>;
 

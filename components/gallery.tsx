@@ -43,6 +43,7 @@ function ProgressiveImage({
   priority = false,
   imageWidth = 1200,
   onClick,
+  onImageLoaded,
   draggable = false,
 }: {
   src: string
@@ -53,6 +54,7 @@ function ProgressiveImage({
   priority?: boolean
   imageWidth?: number
   onClick?: () => void
+  onImageLoaded?: () => void
   draggable?: boolean
 }) {
   const [loaded, setLoaded] = useState(false)
@@ -86,7 +88,10 @@ function ProgressiveImage({
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         draggable={draggable}
-        onLoad={() => setLoaded(true)}
+        onLoad={() => {
+          setLoaded(true)
+          onImageLoaded?.()
+        }}
         onError={() => {
           setHasError(true)
           setLoaded(true)
@@ -112,6 +117,7 @@ export default function Gallery() {
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null)
   const [activeMediaIndex, setActiveMediaIndex] = useState(0)
   const [hoveredWorkId, setHoveredWorkId] = useState<string | null>(null)
+  const [loadedImageUrls, setLoadedImageUrls] = useState<Set<string>>(() => new Set())
   const [isHydrated, setIsHydrated] = useState(false)
   const scrollPositionRef = useRef(0)
 
@@ -154,6 +160,15 @@ export default function Gallery() {
 
   const resetViewerState = useCallback(() => {
     setActiveMediaIndex(0)
+  }, [])
+
+  const markImageLoaded = useCallback((url: string) => {
+    setLoadedImageUrls((previous) => {
+      if (previous.has(url)) return previous
+      const next = new Set(previous)
+      next.add(url)
+      return next
+    })
   }, [])
 
   const closeModalState = useCallback(() => {
@@ -371,13 +386,16 @@ export default function Gallery() {
                       {getWorkMedia(work).length > 1 ? (
                         <div
                           className={`absolute inset-0 transition-opacity duration-300 ${
-                            hoveredWorkId === work.id ? "opacity-100" : "opacity-0"
+                            hoveredWorkId === work.id && loadedImageUrls.has(getWorkMedia(work)[1].url)
+                              ? "opacity-100"
+                              : "opacity-0"
                           }`}
                         >
                           <ProgressiveImage
                             src={getWorkMedia(work)[1].url}
                             alt={`${work.title}, alternate view`}
                             priority={false}
+                            onImageLoaded={() => markImageLoaded(getWorkMedia(work)[1].url)}
                             className="h-full w-full"
                             imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                           />

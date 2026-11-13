@@ -85,7 +85,7 @@ export default function About() {
           </div>
 
           <p className="mt-12 max-w-[65ch] text-base leading-relaxed text-muted-foreground sm:text-lg">
-            I build visual worlds for releases, campaigns, and people with something to say. The work moves between image-making, design, and direction. It is made to feel specific, immediate, and lived-in.
+            I build visual stufffor releases, campaigns, and people with something to say. The work moves between image-making, design, and direction. It is made to feel specific, immediate, and lived-in.
           </p>
 
           <div className="mt-12">

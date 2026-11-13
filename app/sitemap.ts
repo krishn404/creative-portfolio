@@ -42,6 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    { url: `${SITE_URL}/letter`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/about-ktwk`, lastModified: writingUpdatedAt, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/test`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/play-ground`, changeFrequency: "monthly", priority: 0.5 },

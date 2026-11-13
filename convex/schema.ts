@@ -115,4 +115,38 @@ export default defineSchema({
   })
     .index("by_post_visitor", ["postId", "visitorKey"])
     .index("by_post", ["postId"]),
+
+  subscribers: defineTable({
+    email: v.string(),
+    source: v.optional(v.string()),
+    status: v.union(v.literal("active"), v.literal("unsubscribed")),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  broadcasts: defineTable({
+    subject: v.string(),
+    html: v.string(),
+    text: v.string(),
+    status: v.union(v.literal("sending"), v.literal("completed"), v.literal("failed")),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+    recipientCount: v.number(),
+    sentCount: v.number(),
+    failedCount: v.number(),
+    nextBatch: v.number(),
+    error: v.optional(v.string()),
+  }).index("by_createdAt", ["createdAt"]),
+
+  broadcastRecipients: defineTable({
+    broadcastId: v.id("broadcasts"),
+    subscriberId: v.id("subscribers"),
+    email: v.string(),
+    status: v.union(v.literal("pending"), v.literal("sending"), v.literal("sent"), v.literal("failed")),
+    batchKey: v.optional(v.string()),
+    resendId: v.optional(v.string()),
+    error: v.optional(v.string()),
+    sentAt: v.optional(v.number()),
+  })
+    .index("by_broadcast_status", ["broadcastId", "status"])
+    .index("by_broadcast_subscriber", ["broadcastId", "subscriberId"]),
 })

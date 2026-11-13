@@ -3,7 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 // Get Convex URL from environment variable
 // In production, this should be set to your deployed Convex URL
 // Format: https://your-project-name.convex.cloud
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.trim()
 
 if (!convexUrl) {
   const errorMessage = 

@@ -242,6 +242,25 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     setShowNewModal(true)
   }
 
+  const handleEditWork = (work: WorkItem) => {
+    const media = work.media?.length
+      ? work.media
+      : work.img
+        ? [{ url: work.img, publicId: work.publicId, type: "image" as const, order: 0 }]
+        : []
+
+    setNewWork({ ...work, media })
+    setNewWorkFormData({
+      title: work.title,
+      year: work.year || "",
+      tag: work.tag || "",
+      description: work.description || "",
+      category: normalizeWorkCategory(work.category) || "Posters",
+      status: work.status || "draft",
+    })
+    setShowNewModal(true)
+  }
+
   const handleSaveWork = async (work: WorkItem, options?: { closeNewModal?: boolean }) => {
     const parsed = workFormSchema.safeParse({
       title: work.title,
@@ -692,7 +711,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                         <WorkCard
                           key={work.id}
                           work={work}
-                          onSave={(updated) => handleSaveWork(updated)}
+                          onEdit={() => handleEditWork(work)}
                           onUpdateStatus={(newStatus) => handleUpdateStatus(work, newStatus)}
                           onDelete={() => setDeleteConfirm({ open: true, work })}
                         />
@@ -933,8 +952,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add new work</DialogTitle>
-            <DialogDescription>Fill in details and upload media</DialogDescription>
+            <DialogTitle>{newWork?.id && (content.works ?? []).some((work) => work.id === newWork.id) ? "Edit work" : "Add new work"}</DialogTitle>
+            <DialogDescription>Update details, upload new images, remove existing images, or change their order.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -1169,7 +1188,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
 
 type WorkCardProps = {
   work: WorkItem
-  onSave: (work: WorkItem) => void
+  onEdit: () => void
   onUpdateStatus: (status: WorkStatus) => void
   onDelete: () => void
 }
@@ -1198,21 +1217,7 @@ function StatCard({
   )
 }
 
-function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
-  const [editing, setEditing] = useState(false)
-  const [title, setTitle] = useState(work.title)
-  const [year, setYear] = useState(work.year || "")
-  const [tag, setTag] = useState(work.tag || "")
-  const [description, setDescription] = useState(work.description || "")
-  const [category, setCategory] = useState<WorkCategory>(normalizeWorkCategory(work.category) || "Posters")
-
-  useEffect(() => {
-    setTitle(work.title)
-    setYear(work.year || "")
-    setTag(work.tag || "")
-    setDescription(work.description || "")
-    setCategory(normalizeWorkCategory(work.category) || "Posters")
-  }, [work.title, work.year, work.tag, work.description, work.category])
+function WorkCard({ work, onEdit, onUpdateStatus, onDelete }: WorkCardProps) {
 
   const statusIcons = {
     published: Eye,
@@ -1256,56 +1261,22 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
       </div>
 
       <div className="p-4 space-y-3 flex-1 flex flex-col">
-        {editing ? (
-          <div className="space-y-2">
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="h-9" />
-            <div className="grid grid-cols-2 gap-2">
-              <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className="h-9" />
-              <Select value={category} onValueChange={(v) => setCategory(v as WorkCategory)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Custom tag (optional)" className="h-9" maxLength={80} />
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optional)"
-              className="min-h-20"
-              maxLength={2000}
-            />
-          </div>
-        ) : (
-          <div className="space-y-1">
-            <h3 className="font-semibold line-clamp-2">{title || "Untitled"}</h3>
-            <p className="text-xs text-muted-foreground">
-              {work.tag || displayWorkCategory(work.category) || "Uncategorized"} {work.year ? `• ${work.year}` : ""}
-            </p>
-          </div>
-        )}
+        <div className="space-y-1">
+          <h3 className="font-semibold line-clamp-2">{work.title || "Untitled"}</h3>
+          <p className="text-xs text-muted-foreground">
+            {work.tag || displayWorkCategory(work.category) || "Uncategorized"} {work.year ? `• ${work.year}` : ""}
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2 mt-auto pt-2">
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              variant={editing ? "default" : "outline"}
-              onClick={() => {
-                if (editing) {
-                  onSave({ ...work, title, year, tag, description, category })
-                }
-                setEditing((prev) => !prev)
-              }}
+              variant="outline"
+              onClick={onEdit}
               className="flex-1"
             >
-              {editing ? "Save" : <Edit className="w-4 h-4" />}
+              <Edit className="w-4 h-4" /> <span className="ml-1">Edit</span>
             </Button>
             <Select value={work.status || "draft"} onValueChange={(v) => onUpdateStatus(v as WorkStatus)}>
               <SelectTrigger className="flex-1 h-9">

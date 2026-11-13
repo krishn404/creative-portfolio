@@ -1,6 +1,14 @@
 import { query, mutation } from "./_generated/server"
 import { v } from "convex/values"
 
+const sortWorks = <T extends { sort_order?: number; created_at: string }>(works: T[]) =>
+  [...works].sort((a, b) => {
+    if (a.sort_order !== undefined && b.sort_order !== undefined) return a.sort_order - b.sort_order
+    if (a.sort_order !== undefined) return -1
+    if (b.sort_order !== undefined) return 1
+    return b.created_at.localeCompare(a.created_at)
+  })
+
 export const listPublished = query({
   args: {},
   handler: async (ctx) => {
@@ -10,7 +18,7 @@ export const listPublished = query({
       .order("desc")
       .collect()
 
-    return works.map((w) => ({
+    return sortWorks(works).map((w) => ({
       id: w.id,
       title: w.title,
       img: w.img,
@@ -18,6 +26,7 @@ export const listPublished = query({
       year: w.year,
       tag: w.tag,
       description: w.description,
+      sortOrder: w.sort_order,
       publicId: w.public_id,
       category: w.category,
       showInAbout: w.show_in_about,
@@ -28,9 +37,9 @@ export const listPublished = query({
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
-    const works = await ctx.db.query("works").order("desc").collect()
+    const works = await ctx.db.query("works").collect()
 
-    return works.map((w) => ({
+    return sortWorks(works).map((w) => ({
       id: w.id,
       title: w.title,
       img: w.img,
@@ -38,6 +47,7 @@ export const listAll = query({
       year: w.year,
       tag: w.tag,
       description: w.description,
+      sortOrder: w.sort_order,
       publicId: w.public_id,
       category: w.category,
       status: w.status,
@@ -64,6 +74,7 @@ export const upsert = mutation({
     year: v.optional(v.string()),
     tag: v.optional(v.string()),
     description: v.optional(v.string()),
+    sortOrder: v.optional(v.number()),
     publicId: v.optional(v.string()),
     category: v.optional(v.string()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("archived"))),
@@ -86,6 +97,7 @@ export const upsert = mutation({
           year: args.year,
           tag: args.tag,
           description: args.description,
+          sort_order: args.sortOrder ?? existing.sort_order,
           public_id: args.publicId,
           category: args.category,
           status: args.status ?? existing.status,
@@ -105,6 +117,7 @@ export const upsert = mutation({
       year: args.year,
       tag: args.tag,
       description: args.description,
+      sort_order: args.sortOrder,
       public_id: args.publicId,
       category: args.category,
       status: args.status ?? "draft",
@@ -114,6 +127,22 @@ export const upsert = mutation({
     })
 
     return { id: workId }
+  },
+})
+
+export const reorder = mutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    const works = await ctx.db.query("works").collect()
+    const byId = new Map(works.map((work) => [work.id, work]))
+
+    if (args.ids.length !== works.length || new Set(args.ids).size !== args.ids.length || args.ids.some((id) => !byId.has(id))) {
+      throw new Error("Order must contain every work exactly once")
+    }
+
+    const now = new Date().toISOString()
+    await Promise.all(args.ids.map((id, index) => ctx.db.patch(byId.get(id)!._id, { sort_order: index, updated_at: now })))
+    return { ok: true }
   },
 })
 

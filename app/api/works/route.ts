@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       year: work.year,
       tag: work.tag,
       description: work.description,
+      sortOrder: work.sortOrder,
       publicId: work.publicId,
       category: work.category,
       status: work.status,

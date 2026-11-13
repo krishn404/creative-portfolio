@@ -2,7 +2,7 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import { getDefaultContent, type SiteContent } from "@/lib/content"
 import AdminDashboard from "@/components/admin/dashboard"
-import { deleteWorkAction, saveContentAction, updateWorkStatusAction, upsertWorkAction } from "./actions"
+import { deleteWorkAction, reorderWorksAction, saveContentAction, updateWorkStatusAction, upsertWorkAction } from "./actions"
 
 export default async function AdminPage() {
   let initialContent: SiteContent
@@ -22,6 +22,7 @@ export default async function AdminPage() {
         saveContent: saveContentAction,
         upsertWork: upsertWorkAction,
         updateWorkStatus: updateWorkStatusAction,
+        reorderWorks: reorderWorksAction,
         deleteWork: deleteWorkAction,
       }}
     />

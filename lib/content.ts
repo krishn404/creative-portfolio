@@ -11,6 +11,7 @@ export type WorkItem = {
   year?: string
   tag?: string
   description?: string
+  sortOrder?: number
   publicId?: string
   category?: WorkCategory | "Graphic Clothing" | string
   status?: "draft" | "published" | "archived"

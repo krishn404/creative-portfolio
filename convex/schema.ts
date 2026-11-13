@@ -48,6 +48,7 @@ export default defineSchema({
     year: v.optional(v.string()),
     tag: v.optional(v.string()),
     description: v.optional(v.string()),
+    sort_order: v.optional(v.number()),
     public_id: v.optional(v.string()),
     category: v.optional(v.string()),
     status: v.union(v.literal("draft"), v.literal("published"), v.literal("archived")),

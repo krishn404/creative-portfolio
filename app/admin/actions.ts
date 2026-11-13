@@ -18,6 +18,7 @@ const workSchema = z.object({
   year: z.string().max(10).optional(),
   tag: z.string().max(80).optional(),
   description: z.string().max(2000).optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
   showInAbout: z.boolean().optional(),
   publicId: z.string().optional(),
   category: z.enum(categories),
@@ -102,6 +103,7 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       year: parsed.data.year,
       tag: parsed.data.tag,
       description: parsed.data.description,
+      sortOrder: parsed.data.sortOrder,
       publicId: parsed.data.publicId,
       category: parsed.data.category,
       status: parsed.data.status || "draft",
@@ -116,6 +118,7 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       year: parsed.data.year,
       tag: parsed.data.tag,
       description: parsed.data.description,
+      sortOrder: parsed.data.sortOrder,
       public_id: parsed.data.publicId,
       category: parsed.data.category,
       status: parsed.data.status || "draft",
@@ -128,6 +131,12 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       `Failed to save work: ${error instanceof Error ? error.message : String(error)}`
     )
   }
+}
+
+export async function reorderWorksAction(ids: string[]) {
+  await assertAdminSession()
+  await convex.mutation(api.works.reorder, { ids })
+  return { ok: true }
 }
 
 export async function updateWorkStatusAction(workId: string, status: "draft" | "published" | "archived") {

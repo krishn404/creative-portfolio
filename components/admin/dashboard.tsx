@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition, type DragEvent } from "react"
 import { useDropzone } from "react-dropzone"
 import { z } from "zod"
 import useSWR, { mutate } from "swr"
@@ -36,7 +36,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit, PenLine } from "lucide-react"
+import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit, GripVertical, PenLine } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { NewsletterDashboard } from "@/components/admin/newsletter-dashboard"
@@ -91,6 +91,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   const [workSearch, setWorkSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<WorkStatus | "All">("All")
   const [categoryFilter, setCategoryFilter] = useState<WorkCategory | "All">("All")
+  const [draggedWorkId, setDraggedWorkId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; work?: WorkItem }>({ open: false })
   const { toast } = useToast()
 
@@ -154,7 +155,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   })
 
   const works = useMemo(() => {
-    const base = [...(content.works ?? [])].sort((a, b) => a.title.localeCompare(b.title))
+    const base = content.works ?? []
     return base
       .filter((w) => (statusFilter === "All" ? true : (w.status ?? "draft") === statusFilter))
       .filter((w) => (categoryFilter === "All" ? true : normalizeWorkCategory(w.category) === categoryFilter))
@@ -303,6 +304,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       year: saved.year ?? work.year,
       tag: saved.tag ?? work.tag,
       description: saved.description ?? work.description,
+      sortOrder: saved.sortOrder ?? work.sortOrder,
       publicId: saved.public_id ?? work.publicId,
       category: (saved.category ?? work.category) as WorkCategory,
       status: (saved.status ?? work.status ?? "draft") as WorkStatus,
@@ -356,6 +358,35 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       setContent((prev) => ({ ...prev, works: previous }))
       setError("Failed to update status")
       toast({ title: "Update failed", description: "Could not update status", variant: "destructive" })
+    } finally {
+      setBusyMessage(null)
+    }
+  }
+
+  const handleReorderWorks = async (targetId: string) => {
+    if (!draggedWorkId || draggedWorkId === targetId || workSearch || statusFilter !== "All" || categoryFilter !== "All") return
+
+    const previous = content.works ?? []
+    const fromIndex = previous.findIndex((work) => work.id === draggedWorkId)
+    const toIndex = previous.findIndex((work) => work.id === targetId)
+    if (fromIndex < 0 || toIndex < 0) return
+
+    const reordered = [...previous]
+    const [moved] = reordered.splice(fromIndex, 1)
+    reordered.splice(toIndex, 0, moved)
+    const withSortOrder = reordered.map((work, index) => ({ ...work, sortOrder: index }))
+
+    setContent((prev) => ({ ...prev, works: withSortOrder }))
+    setDraggedWorkId(null)
+    setBusyMessage("Saving work order...")
+    try {
+      await actions.reorderWorks(withSortOrder.map((work) => work.id))
+      await mutate("/api/works?all=true")
+      toast({ title: "Order saved", description: "Gallery cards will follow this order on the public site." })
+    } catch (err) {
+      console.error(err)
+      setContent((prev) => ({ ...prev, works: previous }))
+      toast({ title: "Could not save order", description: "Please try dragging the card again.", variant: "destructive" })
     } finally {
       setBusyMessage(null)
     }
@@ -706,17 +737,32 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                       )}
                     </div>
                   ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {works.map((work) => (
-                        <WorkCard
-                          key={work.id}
-                          work={work}
-                          onEdit={() => handleEditWork(work)}
-                          onUpdateStatus={(newStatus) => handleUpdateStatus(work, newStatus)}
-                          onDelete={() => setDeleteConfirm({ open: true, work })}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {works.map((work) => (
+                          <WorkCard
+                            key={work.id}
+                            work={work}
+                            onEdit={() => handleEditWork(work)}
+                            onUpdateStatus={(newStatus) => handleUpdateStatus(work, newStatus)}
+                            onDelete={() => setDeleteConfirm({ open: true, work })}
+                            draggable={!workSearch && statusFilter === "All" && categoryFilter === "All"}
+                            isDragging={draggedWorkId === work.id}
+                            onDragStart={(event) => {
+                              event.dataTransfer.effectAllowed = "move"
+                              event.dataTransfer.setData("text/plain", work.id)
+                              setDraggedWorkId(work.id)
+                            }}
+                            onDragEnd={() => setDraggedWorkId(null)}
+                            onDragOver={(event) => event.preventDefault()}
+                            onDrop={() => void handleReorderWorks(work.id)}
+                          />
+                        ))}
+                      </div>
+                      {!workSearch && statusFilter === "All" && categoryFilter === "All" ? (
+                        <p className="text-xs text-muted-foreground">Drag cards by their handle to set the public gallery order.</p>
+                      ) : null}
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -1191,6 +1237,12 @@ type WorkCardProps = {
   onEdit: () => void
   onUpdateStatus: (status: WorkStatus) => void
   onDelete: () => void
+  draggable: boolean
+  isDragging: boolean
+  onDragStart: (event: DragEvent<HTMLElement>) => void
+  onDragEnd: () => void
+  onDragOver: (event: DragEvent<HTMLElement>) => void
+  onDrop: () => void
 }
 
 function StatCard({
@@ -1217,7 +1269,7 @@ function StatCard({
   )
 }
 
-function WorkCard({ work, onEdit, onUpdateStatus, onDelete }: WorkCardProps) {
+function WorkCard({ work, onEdit, onUpdateStatus, onDelete, draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop }: WorkCardProps) {
 
   const statusIcons = {
     published: Eye,
@@ -1228,7 +1280,13 @@ function WorkCard({ work, onEdit, onUpdateStatus, onDelete }: WorkCardProps) {
   const StatusIcon = statusIcons[work.status || "draft"]
 
   return (
-    <article className="border rounded-xl overflow-hidden bg-card shadow-md hover:shadow-lg transition-shadow flex flex-col">
+    <article
+      className={`border rounded-xl overflow-hidden bg-card shadow-md transition-all flex flex-col ${
+        isDragging ? "scale-[0.98] opacity-50" : "hover:shadow-lg"
+      }`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <div className="relative h-40 w-full bg-muted">
         {work.img ? (
           <img src={work.img || "/placeholder.svg"} alt={work.title} className="h-full w-full object-cover" />
@@ -1262,7 +1320,21 @@ function WorkCard({ work, onEdit, onUpdateStatus, onDelete }: WorkCardProps) {
 
       <div className="p-4 space-y-3 flex-1 flex flex-col">
         <div className="space-y-1">
-          <h3 className="font-semibold line-clamp-2">{work.title || "Untitled"}</h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold line-clamp-2">{work.title || "Untitled"}</h3>
+            {draggable ? (
+              <button
+                type="button"
+                draggable
+                aria-label={`Drag ${work.title} to reorder`}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                className="cursor-grab rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground active:cursor-grabbing"
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
           <p className="text-xs text-muted-foreground">
             {work.tag || displayWorkCategory(work.category) || "Uncategorized"} {work.year ? `• ${work.year}` : ""}
           </p>

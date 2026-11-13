@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { z } from "zod"
 import { v2 as cloudinary } from "cloudinary"
-import { ADMIN_COOKIE_NAME } from "@/lib/auth"
+import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import type { SiteContent } from "@/lib/content"
@@ -16,6 +16,8 @@ const workSchema = z.object({
   title: z.string().min(2),
   img: z.string().url(),
   year: z.string().max(10).optional(),
+  tag: z.string().max(80).optional(),
+  description: z.string().max(2000).optional(),
   publicId: z.string().optional(),
   category: z.enum(categories),
   status: z.enum(statuses).optional(),
@@ -50,7 +52,7 @@ const contentSchema = z.object({
 async function assertAdminSession() {
   const cookieStore = await cookies()
   const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value
-  const expected = process.env.ADMIN_SESSION_TOKEN || process.env.ADMIN_PASSWORD
+  const expected = getAdminSessionToken()
   if (!token || token !== expected) {
     throw new Error("UNAUTHORIZED")
   }
@@ -97,6 +99,8 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       title: parsed.data.title,
       img: parsed.data.img,
       year: parsed.data.year,
+      tag: parsed.data.tag,
+      description: parsed.data.description,
       publicId: parsed.data.publicId,
       category: parsed.data.category,
       status: parsed.data.status || "draft",
@@ -108,6 +112,8 @@ export async function upsertWorkAction(work: z.infer<typeof workSchema>) {
       title: parsed.data.title,
       img: parsed.data.img,
       year: parsed.data.year,
+      tag: parsed.data.tag,
+      description: parsed.data.description,
       public_id: parsed.data.publicId,
       category: parsed.data.category,
       status: parsed.data.status || "draft",

@@ -184,7 +184,7 @@ export default function Gallery() {
 
   const carouselItems = useMemo(() => {
     if (!selectedWork) return []
-    const subtitle = [selectedWork.year, selectedWork.category ? displayWorkCategory(selectedWork.category) : ""]
+    const subtitle = [selectedWork.year, selectedWork.tag || (selectedWork.category ? displayWorkCategory(selectedWork.category) : "")]
       .filter(Boolean)
       .join(" · ")
     return selectedMedia.map((asset, index) => ({
@@ -359,31 +359,37 @@ export default function Gallery() {
                     onMouseLeave={() => setHoveredWorkId(null)}
                   >
                     <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow duration-500 group-hover:shadow-lg">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={hoveredWorkId === work.id ? "hover" : "default"}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.35 }}
-                          className="absolute inset-0"
+                      <div className="absolute inset-0">
+                        <ProgressiveImage
+                          src={getWorkMedia(work)[0]?.url || work.img}
+                          alt={work.title}
+                          priority={false}
+                          className="h-full w-full"
+                          imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        />
+                      </div>
+                      {getWorkMedia(work).length > 1 ? (
+                        <div
+                          className={`absolute inset-0 transition-opacity duration-300 ${
+                            hoveredWorkId === work.id ? "opacity-100" : "opacity-0"
+                          }`}
                         >
                           <ProgressiveImage
-                            src={getDisplayMedia(work, hoveredWorkId === work.id)}
-                            alt={work.title}
+                            src={getWorkMedia(work)[1].url}
+                            alt={`${work.title}, alternate view`}
                             priority={false}
                             className="h-full w-full"
                             imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                           />
-                        </motion.div>
-                      </AnimatePresence>
+                        </div>
+                      ) : null}
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
 
                       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
                         <div className="min-w-0">
                           <p className="text-xs uppercase tracking-[0.2em] text-white/75">
-                            {displayWorkCategory(work.category)}
+                            {work.tag || displayWorkCategory(work.category)}
                           </p>
                           <h3 className="mt-1 line-clamp-1 text-base font-medium text-white">{work.title}</h3>
                         </div>
@@ -473,10 +479,18 @@ export default function Gallery() {
                               <h3 className="text-2xl font-light tracking-tight text-foreground">{selectedWork.title}</h3>
                               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 {selectedWork.year ? <span>{selectedWork.year}</span> : null}
+                                {selectedWork.tag ? <span>{selectedWork.tag}</span> : null}
                                 {selectedWork.category ? <span>{displayWorkCategory(selectedWork.category)}</span> : null}
                               </div>
                             </div>
                           </div>
+
+                          {selectedWork.description ? (
+                            <div className="border-t border-border/70 pt-5">
+                              <p className="mb-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">About this work</p>
+                              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">{selectedWork.description}</p>
+                            </div>
+                          ) : null}
 
                           <div className="flex items-center justify-between">
                             <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Gallery</p>

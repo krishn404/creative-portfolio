@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Archivo, DM_Sans, Geist, Geist_Mono, Instrument_Serif, Space_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import RouteAwareGradualBlur from "@/components/route-aware-gradual-blur"
 import { buildMetadata } from "@/lib/seo/metadata"
 import { buildSiteIdentityJsonLd } from "@/lib/seo/schema"
 import { JsonLd } from "@/components/seo/JsonLd"
@@ -53,7 +52,6 @@ export default function RootLayout({
       >
         {children}
         <JsonLd data={buildSiteIdentityJsonLd()} />
-        <RouteAwareGradualBlur />
         <Analytics />
       </body>
     </html>

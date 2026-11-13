@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
       title: work.title,
       img: work.img,
       year: work.year,
+      tag: work.tag,
+      description: work.description,
       publicId: work.publicId,
       category: work.category,
       status: work.status,

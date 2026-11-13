@@ -9,6 +9,8 @@ export type WorkItem = {
   media?: MediaAsset[]
   title: string
   year?: string
+  tag?: string
+  description?: string
   publicId?: string
   category?: WorkCategory | "Graphic Clothing" | string
   status?: "draft" | "published" | "archived"

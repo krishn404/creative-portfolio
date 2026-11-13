@@ -39,6 +39,7 @@ import Link from "next/link"
 import { Search, Plus, ImageIcon, Eye, Archive, FileText, Trash2, Edit, PenLine } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NewsletterDashboard } from "@/components/admin/newsletter-dashboard"
 import { displayWorkCategory, getDefaultContent, normalizeWorkCategory, WORK_CATEGORIES } from "@/lib/content"
 import type { Actions } from "@/lib/actions" // Import Actions here
 import type { SharedIdea } from "@/lib/shared-ideas"
@@ -52,11 +53,13 @@ const workFormSchema = z.object({
   title: z.string().min(2, "Title required"),
   img: z.string().url("Valid image URL required"),
   year: z.string().optional(),
+  tag: z.string().max(80).optional(),
+  description: z.string().max(2000).optional(),
   category: z.enum(categoryOptions, { required_error: "Category required" }),
   status: z.enum(statusOptions).optional(),
 })
 
-type TabKey = "works" | "about" | "footer" | "ideas"
+type TabKey = "works" | "about" | "footer" | "ideas" | "newsletter"
 
 type Props = {
   initialContent: SiteContent
@@ -80,6 +83,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   const [newWorkFormData, setNewWorkFormData] = useState<{
     title: string
     year: string
+    tag: string
+    description: string
     category: WorkCategory
     status: WorkStatus
   } | null>(null)
@@ -126,6 +131,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
         setNewWorkFormData({
           title: newWork.title,
           year: newWork.year || "",
+          tag: newWork.tag || "",
+          description: newWork.description || "",
           category: normalizeWorkCategory(newWork.category) || "Posters",
           status: newWork.status || "draft",
         })
@@ -218,6 +225,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       title: "",
       img: "",
       year: new Date().getFullYear().toString(),
+      tag: "",
+      description: "",
       category: "Posters",
       status: "draft",
       media: [],
@@ -225,6 +234,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     setNewWorkFormData({
       title: "",
       year: new Date().getFullYear().toString(),
+      tag: "",
+      description: "",
       category: "Posters",
       status: "draft",
     })
@@ -236,6 +247,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       title: work.title,
       img: work.img,
       year: work.year,
+      tag: work.tag,
+      description: work.description,
       category: work.category || "Posters",
       status: work.status,
     })
@@ -267,6 +280,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       title: saved.title ?? work.title,
       img: saved.img ?? work.img,
       year: saved.year ?? work.year,
+      tag: saved.tag ?? work.tag,
+      description: saved.description ?? work.description,
       publicId: saved.public_id ?? work.publicId,
       category: (saved.category ?? work.category) as WorkCategory,
       status: (saved.status ?? work.status ?? "draft") as WorkStatus,
@@ -350,6 +365,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
       setNewWorkFormData({
         title: newWork.title,
         year: newWork.year || "",
+        tag: newWork.tag || "",
+        description: newWork.description || "",
         category: normalizeWorkCategory(newWork.category) || "Posters",
         status: newWork.status || "draft",
       })
@@ -370,6 +387,8 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     const preservedFormData = newWorkFormData || {
       title: work.title,
       year: work.year || "",
+      tag: work.tag || "",
+      description: work.description || "",
       category: work.category,
       status: work.status || "draft",
     }
@@ -604,6 +623,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="footer">Footer & Contact</TabsTrigger>
               <TabsTrigger value="ideas">Shared Ideas</TabsTrigger>
+              <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
             </TabsList>
 
             <TabsContent value="works" className="space-y-4">
@@ -679,6 +699,10 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="newsletter">
+              <NewsletterDashboard />
             </TabsContent>
 
             <TabsContent value="about">
@@ -930,6 +954,29 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Custom tag <span className="font-normal text-muted-foreground">(optional)</span></label>
+              <Input
+                value={newWork?.tag ?? ""}
+                onChange={(e) => setNewWork((prev) => (prev ? { ...prev, tag: e.target.value } : prev))}
+                placeholder="Official artwork, fan poster, concept creative work…"
+                maxLength={80}
+              />
+              <p className="text-xs text-muted-foreground">Shown on the public work card instead of its category.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Description <span className="font-normal text-muted-foreground">(optional)</span></label>
+              <Textarea
+                value={newWork?.description ?? ""}
+                onChange={(e) => setNewWork((prev) => (prev ? { ...prev, description: e.target.value } : prev))}
+                placeholder="A little context about this work…"
+                maxLength={2000}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">Only shown after a visitor opens the work.</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Category</label>
@@ -1153,13 +1200,17 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(work.title)
   const [year, setYear] = useState(work.year || "")
+  const [tag, setTag] = useState(work.tag || "")
+  const [description, setDescription] = useState(work.description || "")
   const [category, setCategory] = useState<WorkCategory>(normalizeWorkCategory(work.category) || "Posters")
 
   useEffect(() => {
     setTitle(work.title)
     setYear(work.year || "")
+    setTag(work.tag || "")
+    setDescription(work.description || "")
     setCategory(normalizeWorkCategory(work.category) || "Posters")
-  }, [work.title, work.year, work.category])
+  }, [work.title, work.year, work.tag, work.description, work.category])
 
   const statusIcons = {
     published: Eye,
@@ -1192,7 +1243,7 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
         </div>
         <div className="absolute bottom-2 left-2 flex items-center gap-2">
           <Badge variant="secondary" className="text-xs">
-            {work.category ?? "Category"}
+            {work.tag || work.category || "Category"}
           </Badge>
           {work.year ? (
             <Badge variant="outline" className="text-xs bg-black/30 border-white/20 text-white">
@@ -1221,12 +1272,20 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
                 </SelectContent>
               </Select>
             </div>
+            <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Custom tag (optional)" className="h-9" maxLength={80} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Description (optional)"
+              className="min-h-20"
+              maxLength={2000}
+            />
           </div>
         ) : (
           <div className="space-y-1">
             <h3 className="font-semibold line-clamp-2">{title || "Untitled"}</h3>
             <p className="text-xs text-muted-foreground">
-              {displayWorkCategory(work.category) ?? "Uncategorized"} {work.year ? `• ${work.year}` : ""}
+              {work.tag || displayWorkCategory(work.category) || "Uncategorized"} {work.year ? `• ${work.year}` : ""}
             </p>
           </div>
         )}
@@ -1238,7 +1297,7 @@ function WorkCard({ work, onSave, onUpdateStatus, onDelete }: WorkCardProps) {
               variant={editing ? "default" : "outline"}
               onClick={() => {
                 if (editing) {
-                  onSave({ ...work, title, year, category })
+                  onSave({ ...work, title, year, tag, description, category })
                 }
                 setEditing((prev) => !prev)
               }}

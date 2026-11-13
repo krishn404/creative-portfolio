@@ -12,6 +12,7 @@ registerHooks({
   },
 })
 const { articleTypeOf, documentTitle, displayDescription, isIndexableTag, summaryHeading } = await import('../lib/blog/seo.ts')
+const { articleKeywords } = await import('../lib/seo/schema.ts')
 
 test('search titles retain the complete headline and explicit SEO title', () => {
   const title = 'Krameri on Music, Identity, and the Freedom to Create'
@@ -43,6 +44,13 @@ test('future interview titles use the verified subject and article type when no 
   }
   assert.equal(documentTitle(post), 'Vidhu Kota Interview: making music videos that actually feel human | KTWK')
   assert.equal(summaryHeading(post), 'In this interview with Vidhu Kota')
+})
+
+test('artist articles expose the requested artist plus KTWK and blog search phrases', () => {
+  const keywords = articleKeywords({ title: 'Artist interview', guestName: 'Artist Name', tags: [] })
+  assert.ok(keywords.includes('Artist Name KTWK'))
+  assert.ok(keywords.includes('Artist Name blog'))
+  assert.ok(keywords.includes('Artist Name Kezual Talks w Kant'))
 })
 
 test('manual SEO overrides survive deterministic defaults', () => {

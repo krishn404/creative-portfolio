@@ -38,9 +38,9 @@ export default function About() {
               className="h-14 w-14 shrink-0 rounded-full object-cover lg:mb-4 lg:h-16 lg:w-16"
             />
             <div>
-              <p className="text-base font-medium leading-tight text-foreground">Krishna</p>
+              <p className="text-base font-medium leading-tight text-foreground">Krishna Kant Maharshi</p>
               <p className="mt-1 max-w-48 text-sm leading-snug text-muted-foreground">
-              Creative practitioner working in film, music, apparel, corporate and editorial.
+              Also known as kantcancook and psyx. Visual designer working across music, film, apparel, corporate and editorial.
               </p>
             </div>
           </div>

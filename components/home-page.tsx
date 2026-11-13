@@ -11,7 +11,7 @@ import type { BlogPostCard } from "@/lib/blog/utils"
 export default function HomePage({ initialPosts = [] }: { initialPosts?: BlogPostCard[] }) {
   return (
     <main className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <h1 className="sr-only">Krishna Kant Maharshi — visual designer and creative</h1>
+      <h1 className="sr-only">Krishna Kant Maharshi — kantcancook and psyx — visual designer portfolio</h1>
       <Stickers />
       <Hero />
       <About />

@@ -8,9 +8,9 @@ import {
   SITE_URL,
 } from "@/lib/seo/constants"
 
-const defaultTitle = "Krishna Kant Maharshi — Visual Designer & Creative"
+const defaultTitle = "Krishna Kant Maharshi (kantcancook / psyx) — Portfolio"
 const defaultDescription =
-  "Visual design, posters, cover art, campaigns, writing, and creative direction by Krishna Kant Maharshi. Working across music, film, apparel, and culture."
+  "Official portfolio of Krishna Kant Maharshi, also known as kantcancook and psyx: visual design, posters, cover art, campaigns, writing, and creative direction."
 
 export function buildMetadata({
   title,

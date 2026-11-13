@@ -15,7 +15,7 @@ import { IncrementViews } from "@/components/blog/IncrementViews"
 import type { BlogPost } from "@/lib/blog/utils"
 import { uniqueTags } from "@/lib/blog/utils"
 import { JsonLd } from "@/components/seo/JsonLd"
-import { displayDescription, displayTldr, documentTitle, postTopics, relatedPosts, summaryHeading, tagPath } from "@/lib/blog/seo"
+import { articleTypeLabel, articleTypeOf, displayDescription, displayTldr, documentTitle, postTopics, relatedPosts, summaryHeading, tagPath } from "@/lib/blog/seo"
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -156,6 +156,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <section aria-labelledby="article-summary" className="mb-8 border-y border-black py-5">
           <h2 id="article-summary" className="blog-font-mono mb-2 text-xs uppercase tracking-wider">{summaryHeading(post)}</h2>
           <p className="blog-font-body leading-relaxed">{displayTldr(post)}</p>
+          {post.guestName && <p className="blog-font-mono mt-3 text-xs text-[var(--text-secondary)]">{post.guestName} on the KTWK Blog — Kezual Talks w Kant. {articleTypeLabel(articleTypeOf(post))} by Krishna Kant Maharshi.</p>}
         </section>
 
         <BlogPostContent html={html} className="blog-prose prose max-w-none" />

@@ -12,11 +12,11 @@ export const revalidate = 3600
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: { absolute: `${BLOG_DISPLAY_NAME} | Interviews & Reviews` },
+    title: { absolute: BLOG_DISPLAY_NAME },
     description: BLOG_DESCRIPTION.slice(0, 159),
     alternates: { canonical: `${SITE_URL}/blog`, types: { "application/rss+xml": "/blog/rss.xml" } },
-    openGraph: { type: "website", title: BLOG_DISPLAY_NAME, description: BLOG_DESCRIPTION, url: `${SITE_URL}/blog`, images: [{ url: `${SITE_URL}/api/og?title=KTWK&subtitle=Kezual%20Talks%20with%20Kant`, width: 1200, height: 630, alt: "KTWK — Kezual Talks with Kant publication cover" }] },
-    twitter: { card: "summary_large_image", title: BLOG_DISPLAY_NAME, description: BLOG_DESCRIPTION, images: [`${SITE_URL}/api/og?title=KTWK&subtitle=Kezual%20Talks%20with%20Kant`] },
+    openGraph: { type: "website", title: BLOG_DISPLAY_NAME, description: BLOG_DESCRIPTION, url: `${SITE_URL}/blog`, images: [{ url: `${SITE_URL}/api/og?title=KTWK%20Blog&subtitle=Kezual%20Talks%20w%20Kant`, width: 1200, height: 630, alt: "KTWK Blog — Kezual Talks w Kant publication cover" }] },
+    twitter: { card: "summary_large_image", title: BLOG_DISPLAY_NAME, description: BLOG_DESCRIPTION, images: [`${SITE_URL}/api/og?title=KTWK%20Blog&subtitle=Kezual%20Talks%20w%20Kant`] },
   }
 }
 

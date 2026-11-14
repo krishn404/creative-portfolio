@@ -92,6 +92,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
   const [statusFilter, setStatusFilter] = useState<WorkStatus | "All">("All")
   const [categoryFilter, setCategoryFilter] = useState<WorkCategory | "All">("All")
   const [draggedWorkId, setDraggedWorkId] = useState<string | null>(null)
+  const [dropTargetWorkId, setDropTargetWorkId] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; work?: WorkItem }>({ open: false })
   const { toast } = useToast()
 
@@ -363,11 +364,11 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
     }
   }
 
-  const handleReorderWorks = async (targetId: string) => {
-    if (!draggedWorkId || draggedWorkId === targetId || workSearch || statusFilter !== "All" || categoryFilter !== "All") return
+  const handleReorderWorks = async (sourceId: string, targetId: string) => {
+    if (sourceId === targetId || workSearch || statusFilter !== "All" || categoryFilter !== "All") return
 
     const previous = content.works ?? []
-    const fromIndex = previous.findIndex((work) => work.id === draggedWorkId)
+    const fromIndex = previous.findIndex((work) => work.id === sourceId)
     const toIndex = previous.findIndex((work) => work.id === targetId)
     if (fromIndex < 0 || toIndex < 0) return
 
@@ -378,6 +379,7 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
 
     setContent((prev) => ({ ...prev, works: withSortOrder }))
     setDraggedWorkId(null)
+    setDropTargetWorkId(null)
     setBusyMessage("Saving work order...")
     try {
       await actions.reorderWorks(withSortOrder.map((work) => work.id))
@@ -748,19 +750,32 @@ export default function AdminDashboard({ initialContent, actions }: Props) {
                             onDelete={() => setDeleteConfirm({ open: true, work })}
                             draggable={!workSearch && statusFilter === "All" && categoryFilter === "All"}
                             isDragging={draggedWorkId === work.id}
+                            isDropTarget={dropTargetWorkId === work.id && draggedWorkId !== work.id}
                             onDragStart={(event) => {
                               event.dataTransfer.effectAllowed = "move"
+                              event.dataTransfer.setData("application/x-portfolio-work", work.id)
                               event.dataTransfer.setData("text/plain", work.id)
                               setDraggedWorkId(work.id)
                             }}
-                            onDragEnd={() => setDraggedWorkId(null)}
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={() => void handleReorderWorks(work.id)}
+                            onDragEnd={() => {
+                              setDraggedWorkId(null)
+                              setDropTargetWorkId(null)
+                            }}
+                            onDragOver={(event) => {
+                              event.preventDefault()
+                              event.dataTransfer.dropEffect = "move"
+                              setDropTargetWorkId(work.id)
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault()
+                              const sourceId = event.dataTransfer.getData("application/x-portfolio-work") || event.dataTransfer.getData("text/plain") || draggedWorkId
+                              if (sourceId) void handleReorderWorks(sourceId, work.id)
+                            }}
                           />
                         ))}
                       </div>
                       {!workSearch && statusFilter === "All" && categoryFilter === "All" ? (
-                        <p className="text-xs text-muted-foreground">Drag cards by their handle to set the public gallery order.</p>
+                        <p className="text-xs text-muted-foreground">Drag a card onto another card to set the public gallery order.</p>
                       ) : null}
                     </>
                   )}
@@ -1239,10 +1254,11 @@ type WorkCardProps = {
   onDelete: () => void
   draggable: boolean
   isDragging: boolean
+  isDropTarget: boolean
   onDragStart: (event: DragEvent<HTMLElement>) => void
   onDragEnd: () => void
   onDragOver: (event: DragEvent<HTMLElement>) => void
-  onDrop: () => void
+  onDrop: (event: DragEvent<HTMLElement>) => void
 }
 
 function StatCard({
@@ -1269,7 +1285,7 @@ function StatCard({
   )
 }
 
-function WorkCard({ work, onEdit, onUpdateStatus, onDelete, draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop }: WorkCardProps) {
+function WorkCard({ work, onEdit, onUpdateStatus, onDelete, draggable, isDragging, isDropTarget, onDragStart, onDragEnd, onDragOver, onDrop }: WorkCardProps) {
 
   const statusIcons = {
     published: Eye,
@@ -1281,9 +1297,12 @@ function WorkCard({ work, onEdit, onUpdateStatus, onDelete, draggable, isDraggin
 
   return (
     <article
+      draggable={draggable}
       className={`border rounded-xl overflow-hidden bg-card shadow-md transition-all flex flex-col ${
-        isDragging ? "scale-[0.98] opacity-50" : "hover:shadow-lg"
+        isDragging ? "scale-[0.98] opacity-50" : isDropTarget ? "ring-2 ring-primary ring-offset-2" : "hover:shadow-lg"
       }`}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -1325,10 +1344,7 @@ function WorkCard({ work, onEdit, onUpdateStatus, onDelete, draggable, isDraggin
             {draggable ? (
               <button
                 type="button"
-                draggable
                 aria-label={`Drag ${work.title} to reorder`}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
                 className="cursor-grab rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground active:cursor-grabbing"
               >
                 <GripVertical className="h-4 w-4" />

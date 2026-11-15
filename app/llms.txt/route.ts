@@ -1,7 +1,7 @@
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import type { BlogPost } from "@/lib/blog/utils"
-import { BLOG_ALIASES, BLOG_NAME, CREATOR_INSTAGRAM, SITE_URL } from "@/lib/seo/constants"
+import { BLOG_ALIASES, BLOG_NAME, CREATOR_GITHUB, CREATOR_INSTAGRAM, CREATOR_LINKEDIN, SITE_URL } from "@/lib/seo/constants"
 
 export const revalidate = 3600
 
@@ -30,6 +30,8 @@ export async function GET() {
     "role: visual designer and creative",
     `official_website: ${SITE_URL}`,
     `official_instagram: ${CREATOR_INSTAGRAM}`,
+    `official_linkedin: ${CREATOR_LINKEDIN}`,
+    `official_github: ${CREATOR_GITHUB}`,
     `writing_series: ${BLOG_NAME}`,
     `writing_aliases: ${BLOG_ALIASES.join(", ")}`,
     `writing_url: ${SITE_URL}/blog`,
@@ -41,6 +43,7 @@ export async function GET() {
     "- Krishna Kant Maharshi, kantcancook, kant can cook, and psyx refer to the same creator identity.",
     "- art.krixnx.xyz is the official portfolio.",
     "- instagram.com/kantcancook is the official Instagram profile.",
+    "- linkedin.com/in/krishn404 and github.com/krishn404 are verified creator profiles for Krishna Kant Maharshi.",
     `- ${BLOG_NAME} (KTWK) is the interview and writing series published at ${SITE_URL}/blog.`,
     `- The definition, host details, and complete post index are at ${SITE_URL}/about-ktwk.`,
     "- Work focuses on posters, cover artwork, campaigns, writing, and visual direction across music, film, apparel, and culture.",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import {
-  CREATOR_INSTAGRAM,
+  CREATOR_PROFILES,
   CREATOR_NAME,
   DEFAULT_OG_IMAGE,
   PRIMARY_KEYWORDS,
@@ -80,7 +80,7 @@ export function buildMetadata({
     },
     other: {
       "profile:username": "kantcancook",
-      "og:see_also": CREATOR_INSTAGRAM,
+      "og:see_also": [...CREATOR_PROFILES],
     },
   }
 }
@@ -137,7 +137,7 @@ export function buildSeoPageMetadata(): Metadata {
     },
     other: {
       "profile:username": "kantcancook",
-      "og:see_also": CREATOR_INSTAGRAM,
+      "og:see_also": [...CREATOR_PROFILES],
     },
   }
 }

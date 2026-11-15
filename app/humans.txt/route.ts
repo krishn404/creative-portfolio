@@ -1,4 +1,4 @@
-import { CREATOR_INSTAGRAM, SITE_URL } from "@/lib/seo/constants"
+import { CREATOR_GITHUB, CREATOR_INSTAGRAM, CREATOR_LINKEDIN, SITE_URL } from "@/lib/seo/constants"
 
 export const dynamic = "force-static"
 
@@ -13,6 +13,8 @@ export async function GET() {
     "/* SITE */",
     `Portfolio: ${SITE_URL}`,
     `Instagram: ${CREATOR_INSTAGRAM}`,
+    `LinkedIn: ${CREATOR_LINKEDIN}`,
+    `GitHub: ${CREATOR_GITHUB}`,
     "Writing: Kezual Talks w Kant (KTWK)",
     `Writing URL: ${SITE_URL}/blog`,
   ].join("\n")

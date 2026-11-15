@@ -19,7 +19,7 @@ type SavePostResult = { ok: true; id?: string } | { ok: false; message: string }
 const collaboratorEditSchema = z.object({
   slug: z.string().min(1),
   code: z.string().length(4).regex(/^[A-Z0-9]+$/),
-  password: z.string().min(16).max(200),
+  password: z.string().min(12).max(200),
   title: z.string().trim().min(1).max(240),
   excerpt: z.string().max(2_000),
   content: z.string().min(1).max(200_000),
@@ -28,7 +28,7 @@ const collaboratorEditSchema = z.object({
 const collaboratorAuthenticationSchema = z.object({
   slug: z.string().min(1),
   code: z.string().length(4).regex(/^[A-Z0-9]+$/),
-  password: z.string().min(16).max(200),
+  password: z.string().min(12).max(200),
 })
 
 function collaboratorSecretHash(value: string) {
@@ -127,7 +127,7 @@ export async function updatePostAction(
 export async function setPostCollaboratorAccessAction(id: string, enabled: boolean) {
   try {
     await assertAdminSession()
-    const password = enabled ? randomBytes(18).toString("base64url") : undefined
+    const password = enabled ? randomBytes(9).toString("base64url") : undefined
     let result: { slug: string; enabled: boolean } | undefined
     let code: string | undefined
     for (let attempt = 0; attempt < 5; attempt += 1) {

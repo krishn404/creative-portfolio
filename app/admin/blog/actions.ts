@@ -18,14 +18,26 @@ type SavePostResult = { ok: true; id?: string } | { ok: false; message: string }
 
 const collaboratorEditSchema = z.object({
   slug: z.string().min(1),
-  token: z.string().min(32).max(200),
+  code: z.string().length(4).regex(/^[A-Z0-9]+$/),
+  password: z.string().min(16).max(200),
   title: z.string().trim().min(1).max(240),
   excerpt: z.string().max(2_000),
   content: z.string().min(1).max(200_000),
 })
 
-function collaboratorTokenHash(token: string) {
-  return createHash("sha256").update(token).digest("hex")
+const collaboratorAuthenticationSchema = z.object({
+  slug: z.string().min(1),
+  code: z.string().length(4).regex(/^[A-Z0-9]+$/),
+  password: z.string().min(16).max(200),
+})
+
+function collaboratorSecretHash(value: string) {
+  return createHash("sha256").update(value).digest("hex")
+}
+
+function collaboratorCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  return Array.from(randomBytes(4), (value) => alphabet[value % alphabet.length]).join("")
 }
 
 async function refreshBlogPaths(slug?: string, tags: string[] = []) {
@@ -115,19 +127,32 @@ export async function updatePostAction(
 export async function setPostCollaboratorAccessAction(id: string, enabled: boolean) {
   try {
     await assertAdminSession()
-    const token = enabled ? randomBytes(32).toString("base64url") : undefined
-    const result = await convex.mutation(api.posts.setCollaboratorAccess, {
-      id: id as Id<"posts">,
-      enabled,
-      tokenHash: token ? collaboratorTokenHash(token) : undefined,
-      secret: blogMutationSecret(),
-    })
+    const password = enabled ? randomBytes(18).toString("base64url") : undefined
+    let result: { slug: string; enabled: boolean } | undefined
+    let code: string | undefined
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      code = enabled ? collaboratorCode() : undefined
+      try {
+        result = await convex.mutation(api.posts.setCollaboratorAccess, {
+          id: id as Id<"posts">,
+          enabled,
+          code,
+          passwordHash: password ? collaboratorSecretHash(password) : undefined,
+          secret: blogMutationSecret(),
+        })
+        break
+      } catch (error) {
+        if (!enabled || !(error instanceof Error) || !error.message.includes("code already exists")) throw error
+      }
+    }
+    if (!result) throw new Error("Could not generate a unique collaborator code")
 
     revalidatePath(`/admin/blog/${id}`)
     return {
       ok: true as const,
       enabled: result.enabled,
-      path: token ? `/blog/${result.slug}/edit/${token}` : undefined,
+      path: code ? `/blog/${result.slug}/edit/${code}` : undefined,
+      password,
     }
   } catch (error) {
     console.error("Failed to update collaborator access:", error)
@@ -142,7 +167,8 @@ export async function updateCollaboratorPostAction(input: z.infer<typeof collabo
   try {
     const result = await convex.mutation(api.posts.updateCollaboratorPost, {
       slug: parsed.data.slug,
-      tokenHash: collaboratorTokenHash(parsed.data.token),
+      code: parsed.data.code,
+      passwordHash: collaboratorSecretHash(parsed.data.password),
       title: parsed.data.title,
       excerpt: parsed.data.excerpt,
       content: parsed.data.content,
@@ -153,6 +179,24 @@ export async function updateCollaboratorPostAction(input: z.infer<typeof collabo
   } catch (error) {
     console.error("Failed to save collaborator edit:", error)
     return { ok: false, message: "This collaborator link is invalid or no longer active." }
+  }
+}
+
+export async function authenticateCollaboratorAction(input: z.infer<typeof collaboratorAuthenticationSchema>) {
+  const parsed = collaboratorAuthenticationSchema.safeParse(input)
+  if (!parsed.success) return { ok: false as const, message: "Invalid collaborator password." }
+
+  try {
+    const post = await convex.query(api.posts.getCollaboratorPost, {
+      slug: parsed.data.slug,
+      code: parsed.data.code,
+      passwordHash: collaboratorSecretHash(parsed.data.password),
+    })
+    if (!post) return { ok: false as const, message: "This collaborator link or password is invalid." }
+    return { ok: true as const, post }
+  } catch (error) {
+    console.error("Failed to authenticate collaborator:", error)
+    return { ok: false as const, message: "Could not verify collaborator access. Please try again." }
   }
 }
 

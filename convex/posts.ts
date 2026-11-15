@@ -239,14 +239,19 @@ export const getPostById = query({
 })
 
 export const getCollaboratorPost = query({
-  args: { slug: v.string(), tokenHash: v.string() },
+  args: { slug: v.string(), code: v.string(), passwordHash: v.string() },
   handler: async (ctx, args) => {
     const post = await ctx.db
       .query("posts")
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first()
 
-    if (!post || !post.collaboratorEnabled || post.collaboratorTokenHash !== args.tokenHash) return null
+    if (
+      !post ||
+      !post.collaboratorEnabled ||
+      post.collaboratorCode !== args.code ||
+      post.collaboratorPasswordHash !== args.passwordHash
+    ) return null
 
     const source = post.collaboratorDraft ?? post
     return {
@@ -421,18 +426,28 @@ export const setCollaboratorAccess = mutation({
   args: {
     id: v.id("posts"),
     enabled: v.boolean(),
-    tokenHash: v.optional(v.string()),
+    code: v.optional(v.string()),
+    passwordHash: v.optional(v.string()),
     secret: v.string(),
   },
   handler: async (ctx, args) => {
     if (args.secret !== getViewSecret()) throw new Error("Unauthorized")
     const post = await ctx.db.get(args.id)
     if (!post) throw new Error("Post not found")
-    if (args.enabled && !args.tokenHash) throw new Error("Collaborator token is required")
+    if (args.enabled && (!args.code || !args.passwordHash)) throw new Error("Collaborator code and password are required")
+    if (args.enabled) {
+      const duplicate = await ctx.db
+        .query("posts")
+        .withIndex("by_collaborator_code", (q) => q.eq("collaboratorCode", args.code))
+        .first()
+      if (duplicate && duplicate._id !== args.id) throw new Error("Collaborator code already exists")
+    }
 
     await ctx.db.patch(args.id, {
       collaboratorEnabled: args.enabled,
-      collaboratorTokenHash: args.enabled ? args.tokenHash : undefined,
+      collaboratorTokenHash: undefined,
+      collaboratorCode: args.enabled ? args.code : undefined,
+      collaboratorPasswordHash: args.enabled ? args.passwordHash : undefined,
       updatedAt: Date.now(),
     })
     return { slug: post.slug, enabled: args.enabled }
@@ -442,7 +457,8 @@ export const setCollaboratorAccess = mutation({
 export const updateCollaboratorPost = mutation({
   args: {
     slug: v.string(),
-    tokenHash: v.string(),
+    code: v.string(),
+    passwordHash: v.string(),
     title: v.string(),
     excerpt: v.string(),
     content: v.string(),
@@ -456,7 +472,12 @@ export const updateCollaboratorPost = mutation({
       .withIndex("by_slug", (q) => q.eq("slug", args.slug))
       .first()
 
-    if (!post || !post.collaboratorEnabled || post.collaboratorTokenHash !== args.tokenHash) {
+    if (
+      !post ||
+      !post.collaboratorEnabled ||
+      post.collaboratorCode !== args.code ||
+      post.collaboratorPasswordHash !== args.passwordHash
+    ) {
       throw new Error("Collaborator access is invalid or has been disabled")
     }
 

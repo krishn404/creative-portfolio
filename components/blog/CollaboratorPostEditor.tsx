@@ -12,12 +12,14 @@ type CollaboratorPost = {
 
 export function CollaboratorPostEditor({
   post,
-  token,
+  code,
+  password,
   onSave,
 }: {
   post: CollaboratorPost
-  token: string
-  onSave: (input: { slug: string; token: string; title: string; excerpt: string; content: string }) => Promise<{ ok: boolean; message?: string }>
+  code: string
+  password: string
+  onSave: (input: { slug: string; code: string; password: string; title: string; excerpt: string; content: string }) => Promise<{ ok: boolean; message?: string }>
 }) {
   const [title, setTitle] = useState(post.title)
   const [excerpt, setExcerpt] = useState(post.excerpt)
@@ -28,7 +30,7 @@ export function CollaboratorPostEditor({
   function save() {
     setMessage("")
     startTransition(async () => {
-      const result = await onSave({ slug: post.slug, token, title, excerpt, content })
+      const result = await onSave({ slug: post.slug, code, password, title, excerpt, content })
       setMessage(result.ok ? "Your draft has been saved for the editor to review." : result.message ?? "Could not save your draft.")
     })
   }

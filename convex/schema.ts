@@ -91,6 +91,8 @@ export default defineSchema({
     previousSlugs: v.optional(v.array(v.string())),
     collaboratorEnabled: v.optional(v.boolean()),
     collaboratorTokenHash: v.optional(v.string()),
+    collaboratorCode: v.optional(v.string()),
+    collaboratorPasswordHash: v.optional(v.string()),
     collaboratorDraft: v.optional(v.object({
       title: v.string(),
       excerpt: v.string(),
@@ -100,6 +102,7 @@ export default defineSchema({
     })),
   })
     .index("by_slug", ["slug"])
+    .index("by_collaborator_code", ["collaboratorCode"])
     .index("by_published", ["published"]),
 
   postRedirects: defineTable({

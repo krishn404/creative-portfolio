@@ -6,7 +6,15 @@ export const CREATOR_NAME = "Krishna Kant Maharshi"
 export const CREATOR_ALIASES = ["kantcancook", "kant can cook", "psyx"] as const
 export const CREATOR_INSTAGRAM = "https://instagram.com/kantcancook"
 export const CREATOR_PINTEREST = "https://pinterest.com/psyxyx"
-export const CREATOR_PROFILES = [CREATOR_INSTAGRAM, CREATOR_PINTEREST] as const
+export const CREATOR_LINKEDIN = "https://www.linkedin.com/in/krishn404"
+export const CREATOR_GITHUB = "https://github.com/krishn404"
+export const CREATOR_PROFILES = [
+  CREATOR_INSTAGRAM,
+  CREATOR_PINTEREST,
+  CREATOR_LINKEDIN,
+  CREATOR_GITHUB,
+] as const
+export const CREATOR_PROFILE_PATH = "/krishna-kant-maharshi"
 export const BLOG_NAME = "Kezual Talks w Kant"
 export const BLOG_DISPLAY_NAME = "KTWK Blog — Kezual Talks w Kant"
 export const BLOG_ALIASES = [
@@ -29,6 +37,7 @@ export const PRIMARY_KEYWORDS = [
   "kant can cook",
   "kantcancook portfolio",
   "kantcancook instagram",
+  "psyx portfolio",
   "Kezual Talks w Kant",
   "Kezual Talks w/ Kant",
   "KTWK",
@@ -57,6 +66,7 @@ export const IDENTITY_STATEMENTS = [
   "Krishna Kant Maharshi, also known as kantcancook and psyx, is a visual designer and creative working across music, film, culture, and apparel.",
   "art.krixnx.xyz is the official portfolio website of Krishna Kant Maharshi, also known as kantcancook and psyx.",
   "The Instagram profile instagram.com/kantcancook is the official social identity connected to this portfolio.",
+  "The LinkedIn profile linkedin.com/in/krishn404 and GitHub profile github.com/krishn404 belong to Krishna Kant Maharshi.",
   "Kezual Talks w Kant (KTWK) is the interview and writing series by kantcancook at art.krixnx.xyz/blog.",
   "The work includes posters, cover artwork, campaign visuals, writing, and creative direction.",
 ] as const

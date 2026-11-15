@@ -4,9 +4,9 @@ import {
   BLOG_DISPLAY_NAME,
   BLOG_NAME,
   CREATOR_ALIASES,
-  CREATOR_INSTAGRAM,
-  CREATOR_PINTEREST,
   CREATOR_NAME,
+  CREATOR_PROFILE_PATH,
+  CREATOR_PROFILES,
   KNOWS_ABOUT,
   SITE_NAME,
   SITE_URL,
@@ -29,7 +29,7 @@ function personNode() {
     image: `${SITE_URL}/api/og?title=kantcancook%20Artist`,
     description:
       "Krishna Kant Maharshi, also known as kantcancook and psyx, is a visual designer and creative working across music, film, culture, and apparel.",
-    sameAs: [CREATOR_INSTAGRAM, CREATOR_PINTEREST, SITE_URL],
+    sameAs: [...CREATOR_PROFILES, SITE_URL],
     jobTitle: "Visual Designer",
     knowsAbout: [...KNOWS_ABOUT],
   }
@@ -54,7 +54,7 @@ export function articleKeywords(post: Pick<BlogPost, "title" | "tags"> & Partial
 
 export function buildPortfolioJsonLd(): JsonLd[] {
   const websiteId = `${SITE_URL}#website`
-  const profilePageId = `${SITE_URL}#profile`
+  const profilePageId = `${SITE_URL}${CREATOR_PROFILE_PATH}#profile`
   const galleryPageId = `${SITE_URL}#gallery`
 
   return [
@@ -62,16 +62,6 @@ export function buildPortfolioJsonLd(): JsonLd[] {
       "@context": "https://schema.org",
       ...personNode(),
       mainEntityOfPage: profilePageId,
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "ProfilePage",
-      "@id": profilePageId,
-      url: SITE_URL,
-      name: `${CREATOR_NAME} profile`,
-      isPartOf: { "@id": websiteId },
-      mainEntity: { "@id": personId },
-      about: { "@id": personId },
     },
     {
       "@context": "https://schema.org",
@@ -125,6 +115,41 @@ export function buildPortfolioJsonLd(): JsonLd[] {
       inLanguage: "en",
       author: { "@id": personId },
       publisher: { "@id": personId },
+    },
+  ]
+}
+
+export function buildCreatorProfileJsonLd(): JsonLd[] {
+  const websiteId = `${SITE_URL}#website`
+  const profileUrl = `${SITE_URL}${CREATOR_PROFILE_PATH}`
+  const profilePageId = `${profileUrl}#profile`
+
+  return [
+    {
+      "@context": "https://schema.org",
+      ...personNode(),
+      mainEntityOfPage: { "@id": profilePageId },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      "@id": profilePageId,
+      url: profileUrl,
+      name: `${CREATOR_NAME} — kantcancook and psyx`,
+      description: "Official creator profile for Krishna Kant Maharshi, also known as kantcancook and psyx.",
+      isPartOf: { "@id": websiteId },
+      mainEntity: { "@id": personId },
+      about: { "@id": personId },
+      dateCreated: "2026-11-15",
+      dateModified: "2026-11-15",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Portfolio", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: CREATOR_NAME, item: profileUrl },
+      ],
     },
   ]
 }

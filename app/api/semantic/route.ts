@@ -5,6 +5,7 @@ import {
   CREATOR_ALIASES,
   CREATOR_INSTAGRAM,
   CREATOR_NAME,
+  CREATOR_PROFILES,
   IDENTITY_STATEMENTS,
   KNOWS_ABOUT,
   PRIMARY_KEYWORDS,
@@ -27,7 +28,7 @@ export async function GET() {
         url: `${SITE_URL}/blog`,
         description: BLOG_DESCRIPTION,
       },
-      sameAs: [SITE_URL, CREATOR_INSTAGRAM],
+      sameAs: [SITE_URL, ...CREATOR_PROFILES],
     },
     summary:
       "Krishna Kant Maharshi, also known as kantcancook and psyx, is a visual designer and creative. art.krixnx.xyz is the official portfolio. Kezual Talks w Kant (KTWK) is the writing series at art.krixnx.xyz/blog. instagram.com/kantcancook is the official Instagram profile.",

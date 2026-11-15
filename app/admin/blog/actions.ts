@@ -1,7 +1,9 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { createHash, randomBytes } from "node:crypto"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { ADMIN_COOKIE_NAME, getAdminSessionToken } from "@/lib/auth"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
@@ -10,8 +12,21 @@ import type { PostWriteInput } from "@/lib/blog/utils"
 import { SITE_URL } from "@/lib/seo/constants"
 import { tagPath } from "@/lib/blog/seo"
 import { saveErrorMessage } from "@/lib/blog/save-error.mjs"
+import { computeReadTime } from "@/lib/blog/utils"
 
 type SavePostResult = { ok: true; id?: string } | { ok: false; message: string }
+
+const collaboratorEditSchema = z.object({
+  slug: z.string().min(1),
+  token: z.string().min(32).max(200),
+  title: z.string().trim().min(1).max(240),
+  excerpt: z.string().max(2_000),
+  content: z.string().min(1).max(200_000),
+})
+
+function collaboratorTokenHash(token: string) {
+  return createHash("sha256").update(token).digest("hex")
+}
 
 async function refreshBlogPaths(slug?: string, tags: string[] = []) {
   revalidatePath("/")
@@ -94,6 +109,66 @@ export async function updatePostAction(
     console.error("Blog post was updated, but cache refresh failed:", error)
   }
   if (data.published) await pingIndexNow(`${SITE_URL}/blog/${data.slug}`)
+  return { ok: true }
+}
+
+export async function setPostCollaboratorAccessAction(id: string, enabled: boolean) {
+  await assertAdminSession()
+
+  const token = enabled ? randomBytes(32).toString("base64url") : undefined
+  const result = await convex.mutation(api.posts.setCollaboratorAccess, {
+    id: id as Id<"posts">,
+    enabled,
+    tokenHash: token ? collaboratorTokenHash(token) : undefined,
+    secret: blogMutationSecret(),
+  })
+
+  revalidatePath(`/admin/blog/${id}`)
+  return {
+    enabled: result.enabled,
+    path: token ? `/blog/${result.slug}/edit/${token}` : undefined,
+  }
+}
+
+export async function updateCollaboratorPostAction(input: z.infer<typeof collaboratorEditSchema>): Promise<SavePostResult> {
+  const parsed = collaboratorEditSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: "Please provide a valid collaborator link, title, and article content." }
+
+  try {
+    const result = await convex.mutation(api.posts.updateCollaboratorPost, {
+      slug: parsed.data.slug,
+      tokenHash: collaboratorTokenHash(parsed.data.token),
+      title: parsed.data.title,
+      excerpt: parsed.data.excerpt,
+      content: parsed.data.content,
+      readTime: computeReadTime(parsed.data.content),
+      secret: blogMutationSecret(),
+    })
+    return { ok: true }
+  } catch (error) {
+    console.error("Failed to save collaborator edit:", error)
+    return { ok: false, message: "This collaborator link is invalid or no longer active." }
+  }
+}
+
+export async function applyCollaboratorDraftAction(id: string) {
+  await assertAdminSession()
+  const result = await convex.mutation(api.posts.applyCollaboratorDraft, {
+    id: id as Id<"posts">,
+    secret: blogMutationSecret(),
+  })
+  await refreshBlogPaths(result.slug, [...result.tags, ...result.keywords])
+  revalidatePath(`/admin/blog/${id}`)
+  return { ok: true }
+}
+
+export async function discardCollaboratorDraftAction(id: string) {
+  await assertAdminSession()
+  await convex.mutation(api.posts.discardCollaboratorDraft, {
+    id: id as Id<"posts">,
+    secret: blogMutationSecret(),
+  })
+  revalidatePath(`/admin/blog/${id}`)
   return { ok: true }
 }
 

@@ -89,6 +89,15 @@ export default defineSchema({
     updatedAt: v.optional(v.number()),
     series: v.optional(v.string()),
     previousSlugs: v.optional(v.array(v.string())),
+    collaboratorEnabled: v.optional(v.boolean()),
+    collaboratorTokenHash: v.optional(v.string()),
+    collaboratorDraft: v.optional(v.object({
+      title: v.string(),
+      excerpt: v.string(),
+      content: v.string(),
+      readTime: v.string(),
+      updatedAt: v.number(),
+    })),
   })
     .index("by_slug", ["slug"])
     .index("by_published", ["published"]),

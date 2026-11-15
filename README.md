@@ -68,6 +68,7 @@ Visit `http://localhost:3000` to see your portfolio and `http://localhost:3000/a
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret | Yes |
 | `ADMIN_PASSWORD` | Password for admin login | Yes |
 | `ADMIN_SESSION_TOKEN` | Session token for authentication | Yes |
+| `BLOG_VIEW_SECRET` | Shared server-to-Convex secret for blog mutations and collaborator access; set the same value in Vercel and Convex | Recommended |
 
 ## Deployment
 

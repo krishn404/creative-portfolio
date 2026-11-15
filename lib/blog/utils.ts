@@ -80,6 +80,14 @@ export type BlogPost = {
   updatedAt?: number
   series?: string
   previousSlugs?: string[]
+  collaboratorEnabled?: boolean
+  collaboratorDraft?: {
+    title: string
+    excerpt: string
+    content: string
+    readTime: string
+    updatedAt: number
+  }
 }
 
 export type PostWriteInput = {

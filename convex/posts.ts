@@ -89,6 +89,7 @@ function formatPost(post: Doc<"posts">) {
     updatedAt: post.updatedAt,
     series: defaultSeries(post.series),
     previousSlugs: post.previousSlugs ?? [],
+    collaboratorEnabled: post.collaboratorEnabled ?? false,
   }
 }
 
@@ -233,7 +234,29 @@ export const getPostById = query({
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.id)
     if (!post) return null
-    return formatPost(post)
+    return { ...formatPost(post), collaboratorDraft: post.collaboratorDraft }
+  },
+})
+
+export const getCollaboratorPost = query({
+  args: { slug: v.string(), tokenHash: v.string() },
+  handler: async (ctx, args) => {
+    const post = await ctx.db
+      .query("posts")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first()
+
+    if (!post || !post.collaboratorEnabled || post.collaboratorTokenHash !== args.tokenHash) return null
+
+    const source = post.collaboratorDraft ?? post
+    return {
+      id: post._id,
+      title: source.title,
+      slug: post.slug,
+      excerpt: source.excerpt,
+      content: source.content,
+      published: post.published,
+    }
   },
 })
 
@@ -391,6 +414,93 @@ export const updatePost = mutation({
       previousTags: post.tags,
       previousKeywords: post.keywords ?? [],
     }
+  },
+})
+
+export const setCollaboratorAccess = mutation({
+  args: {
+    id: v.id("posts"),
+    enabled: v.boolean(),
+    tokenHash: v.optional(v.string()),
+    secret: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) throw new Error("Unauthorized")
+    const post = await ctx.db.get(args.id)
+    if (!post) throw new Error("Post not found")
+    if (args.enabled && !args.tokenHash) throw new Error("Collaborator token is required")
+
+    await ctx.db.patch(args.id, {
+      collaboratorEnabled: args.enabled,
+      collaboratorTokenHash: args.enabled ? args.tokenHash : undefined,
+      updatedAt: Date.now(),
+    })
+    return { slug: post.slug, enabled: args.enabled }
+  },
+})
+
+export const updateCollaboratorPost = mutation({
+  args: {
+    slug: v.string(),
+    tokenHash: v.string(),
+    title: v.string(),
+    excerpt: v.string(),
+    content: v.string(),
+    readTime: v.string(),
+    secret: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) throw new Error("Unauthorized")
+    const post = await ctx.db
+      .query("posts")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first()
+
+    if (!post || !post.collaboratorEnabled || post.collaboratorTokenHash !== args.tokenHash) {
+      throw new Error("Collaborator access is invalid or has been disabled")
+    }
+
+    const title = args.title.trim()
+    const content = args.content.trim()
+    if (!title || !content) throw new Error("Title and content are required")
+
+    const excerpt = clean(args.excerpt) || buildExcerptFromBody(content, title)
+    await ctx.db.patch(post._id, {
+      collaboratorDraft: { title, excerpt, content, readTime: args.readTime, updatedAt: Date.now() },
+    })
+
+    return { slug: post.slug, published: post.published }
+  },
+})
+
+export const applyCollaboratorDraft = mutation({
+  args: { id: v.id("posts"), secret: v.string() },
+  handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) throw new Error("Unauthorized")
+    const post = await ctx.db.get(args.id)
+    if (!post) throw new Error("Post not found")
+    if (!post.collaboratorDraft) throw new Error("No collaborator draft to apply")
+
+    await ctx.db.patch(args.id, {
+      title: post.collaboratorDraft.title,
+      excerpt: post.collaboratorDraft.excerpt,
+      content: post.collaboratorDraft.content,
+      readTime: post.collaboratorDraft.readTime,
+      collaboratorDraft: undefined,
+      updatedAt: Date.now(),
+    })
+    return { slug: post.slug, tags: post.tags, keywords: post.keywords ?? [] }
+  },
+})
+
+export const discardCollaboratorDraft = mutation({
+  args: { id: v.id("posts"), secret: v.string() },
+  handler: async (ctx, args) => {
+    if (args.secret !== getViewSecret()) throw new Error("Unauthorized")
+    const post = await ctx.db.get(args.id)
+    if (!post) throw new Error("Post not found")
+    await ctx.db.patch(args.id, { collaboratorDraft: undefined, updatedAt: Date.now() })
+    return { slug: post.slug }
   },
 })
 

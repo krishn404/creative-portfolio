@@ -4,14 +4,25 @@ import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
 import type { WorkItem } from "@/lib/content"
 
+// Gallery order is edited at runtime in Convex, so this endpoint must always
+// read the current order instead of serving a previously generated response.
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const showAll = searchParams.get("all") === "true"
 
+  if (showAll && !isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const works = showAll ? await convex.query(api.works.listAll) : await convex.query(api.works.listPublished)
 
-    return NextResponse.json({ works })
+    return NextResponse.json(
+      { works },
+      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    )
   } catch (error) {
     console.error("Failed to fetch works from Convex:", error)
     // Return more detailed error in development

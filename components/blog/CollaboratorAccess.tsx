@@ -5,7 +5,7 @@ import { useState, useTransition } from "react"
 type CollaboratorAccessProps = {
   postId: string
   enabled: boolean
-  onChange: (enabled: boolean) => Promise<{ enabled: boolean; path?: string }>
+  onChange: (enabled: boolean) => Promise<{ ok: true; enabled: boolean; path?: string } | { ok: false; message: string }>
 }
 
 export function CollaboratorAccess({ postId, enabled, onChange }: CollaboratorAccessProps) {
@@ -18,6 +18,7 @@ export function CollaboratorAccess({ postId, enabled, onChange }: CollaboratorAc
     startTransition(async () => {
       try {
         const result = await onChange(nextEnabled)
+        if (!result.ok) throw new Error(result.message)
         setIsEnabled(result.enabled)
         setLink(result.path ? `${window.location.origin}${result.path}` : null)
         setMessage(

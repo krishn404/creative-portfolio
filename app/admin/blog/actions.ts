@@ -113,20 +113,25 @@ export async function updatePostAction(
 }
 
 export async function setPostCollaboratorAccessAction(id: string, enabled: boolean) {
-  await assertAdminSession()
+  try {
+    await assertAdminSession()
+    const token = enabled ? randomBytes(32).toString("base64url") : undefined
+    const result = await convex.mutation(api.posts.setCollaboratorAccess, {
+      id: id as Id<"posts">,
+      enabled,
+      tokenHash: token ? collaboratorTokenHash(token) : undefined,
+      secret: blogMutationSecret(),
+    })
 
-  const token = enabled ? randomBytes(32).toString("base64url") : undefined
-  const result = await convex.mutation(api.posts.setCollaboratorAccess, {
-    id: id as Id<"posts">,
-    enabled,
-    tokenHash: token ? collaboratorTokenHash(token) : undefined,
-    secret: blogMutationSecret(),
-  })
-
-  revalidatePath(`/admin/blog/${id}`)
-  return {
-    enabled: result.enabled,
-    path: token ? `/blog/${result.slug}/edit/${token}` : undefined,
+    revalidatePath(`/admin/blog/${id}`)
+    return {
+      ok: true as const,
+      enabled: result.enabled,
+      path: token ? `/blog/${result.slug}/edit/${token}` : undefined,
+    }
+  } catch (error) {
+    console.error("Failed to update collaborator access:", error)
+    return { ok: false as const, message: "Could not update contributor access. Please try again." }
   }
 }
 

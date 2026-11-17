@@ -4,7 +4,7 @@ import Link from "next/link"
 import { notFound, permanentRedirect } from "next/navigation"
 import { convex } from "@/lib/convex"
 import { api } from "@/convex/_generated/api"
-import { SITE_URL, BLOG_NAME } from "@/lib/seo/constants"
+import { SITE_URL, BLOG_NAME, CREATOR_PROFILE_PATH } from "@/lib/seo/constants"
 import { buildBlogPostingJsonLd } from "@/lib/seo/schema"
 import { renderPostContent } from "@/lib/blog/render-content"
 import { BlogPostContent } from "@/components/blog/BlogPostContent"
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: `${SITE_URL}/blog/${post.slug}`,
       types: { "application/rss+xml": "/blog/rss.xml" },
     },
-    authors: [{ name: "Krishna Kant Maharshi", url: SITE_URL }],
+    authors: [{ name: "Krishna Kant Maharshi", url: `${SITE_URL}${CREATOR_PROFILE_PATH}` }],
     openGraph: {
       title,
       description,
@@ -156,7 +156,14 @@ export default async function BlogPostPage({ params }: PageProps) {
         <section aria-labelledby="article-summary" className="mb-8 border-y border-black py-5">
           <h2 id="article-summary" className="blog-font-mono mb-2 text-xs uppercase tracking-wider">{summaryHeading(post)}</h2>
           <p className="blog-font-body leading-relaxed">{displayTldr(post)}</p>
-          {post.guestName && <p className="blog-font-mono mt-3 text-xs text-[var(--text-secondary)]">{post.guestName} on the KTWK Blog — Kezual Talks w Kant. {articleTypeLabel(articleTypeOf(post))} by Krishna Kant Maharshi.</p>}
+          {post.guestName && (
+            <p className="blog-font-mono mt-3 text-xs text-[var(--text-secondary)]">
+              {post.guestName} on the KTWK Blog — Kezual Talks w Kant. {articleTypeLabel(articleTypeOf(post))} by{" "}
+              <Link href={CREATOR_PROFILE_PATH} rel="author" className="underline underline-offset-4">
+                Krishna Kant Maharshi
+              </Link>.
+            </p>
+          )}
         </section>
 
         <BlogPostContent html={html} className="blog-prose prose max-w-none" />

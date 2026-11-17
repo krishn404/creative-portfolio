@@ -54,7 +54,9 @@ export function renderPostContent(contentJson: string): string {
         td: ["colspan", "rowspan"],
       },
       allowedSchemes: ["http", "https", "mailto"],
-    }).replace(/<img(?![^>]*\bloading=)([^>]*)>/gi, '<img loading="lazy"$1>')
+    })
+      .replace(/<h([1-6])>\s*(?:&nbsp;)?\s*<\/h\1>/gi, "")
+      .replace(/<img(?![^>]*\bloading=)([^>]*)>/gi, '<img loading="lazy"$1>')
   } catch {
     return "<p>Unable to render content.</p>"
   }

@@ -18,6 +18,7 @@ import { plainTextFromContent } from "@/convex/postText"
 type JsonLd = Record<string, unknown>
 
 const personId = `${SITE_URL}#person`
+const creatorProfileUrl = `${SITE_URL}${CREATOR_PROFILE_PATH}`
 
 function personNode() {
   return {
@@ -25,7 +26,7 @@ function personNode() {
     "@id": personId,
     name: CREATOR_NAME,
     alternateName: [...CREATOR_ALIASES],
-    url: SITE_URL,
+    url: creatorProfileUrl,
     image: `${SITE_URL}/api/og?title=kantcancook%20Artist`,
     description:
       "Krishna Kant Maharshi, also known as kantcancook and psyx, is a visual designer and creative working across music, film, culture, and apparel.",
@@ -197,8 +198,8 @@ export function buildBlogJsonLd(posts: BlogPostCard[]): JsonLd[] {
       description: BLOG_DESCRIPTION,
       url: `${SITE_URL}/blog`,
       inLanguage: "en",
-      author: personNode(),
-      publisher: personNode(),
+      author: { "@id": personId },
+      publisher: { "@id": personId },
       blogPost: posts.map((post) => ({
         "@type": "BlogPosting",
         headline: post.title,
@@ -258,8 +259,8 @@ export function buildBlogPostingJsonLd(post: BlogPost, image: string): JsonLd[] 
       wordCount: plainTextFromContent(post.content).split(/\s+/).filter(Boolean).length,
       isAccessibleForFree: true,
       about: about.length ? about : undefined,
-      author: personNode(),
-      publisher: personNode(),
+      author: { "@id": personId },
+      publisher: { "@id": personId },
       mentions: subjectNode ? [subjectNode] : undefined,
       isPartOf: {
         "@type": "CreativeWorkSeries",

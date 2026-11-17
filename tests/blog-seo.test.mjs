@@ -13,6 +13,7 @@ registerHooks({
 })
 const { articleTypeOf, documentTitle, displayDescription, isIndexableTag, summaryHeading } = await import('../lib/blog/seo.ts')
 const { articleKeywords } = await import('../lib/seo/schema.ts')
+const { renderPostContent } = await import('../lib/blog/render-content.ts')
 
 test('search titles retain the complete headline and explicit SEO title', () => {
   const title = 'Krameri on Music, Identity, and the Freedom to Create'
@@ -67,4 +68,17 @@ test('reviews are inferred and labelled as reviews rather than interviews', () =
   const legacyReview = { title: 'A New Beginning: Renaissance', slug: 'renaissance-album-review-by-Kayze', tags: ['album'] }
   assert.equal(articleTypeOf(legacyReview), 'review')
   assert.equal(summaryHeading({ ...legacyReview, guestName: 'Kayze' }), 'About this Kayze review')
+})
+
+test('rendered article content drops empty headings', () => {
+  const html = renderPostContent(JSON.stringify({
+    type: 'doc',
+    content: [
+      { type: 'heading', attrs: { level: 2 } },
+      { type: 'paragraph', content: [{ type: 'text', text: 'Body copy' }] },
+    ],
+  }))
+
+  assert.equal(html.includes('<h2></h2>'), false)
+  assert.equal(html.includes('<p>Body copy</p>'), true)
 })

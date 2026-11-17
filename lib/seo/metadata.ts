@@ -3,7 +3,6 @@ import {
   CREATOR_PROFILES,
   CREATOR_NAME,
   DEFAULT_OG_IMAGE,
-  PRIMARY_KEYWORDS,
   SITE_NAME,
   SITE_URL,
 } from "@/lib/seo/constants"
@@ -39,7 +38,6 @@ export function buildMetadata({
     alternates: {
       canonical,
     },
-    keywords: [...PRIMARY_KEYWORDS],
     creator: CREATOR_NAME,
     publisher: CREATOR_NAME,
     category: "art and design portfolio",
@@ -103,7 +101,6 @@ export function buildSeoPageMetadata(): Metadata {
     alternates: {
       canonical,
     },
-    keywords: [...PRIMARY_KEYWORDS],
     creator: CREATOR_NAME,
     publisher: CREATOR_NAME,
     category: "art and design portfolio",

@@ -41,5 +41,6 @@ test("creator profile has a dedicated canonical entity page", () => {
   const portfolioPerson = buildPortfolioJsonLd().find((node) => node["@type"] === "Person")
 
   assert.equal(profile?.url, profileUrl)
+  assert.equal(portfolioPerson?.url, profileUrl)
   assert.equal(portfolioPerson?.mainEntityOfPage, `${profileUrl}#profile`)
 })

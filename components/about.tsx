@@ -4,13 +4,6 @@ import { Instrument_Serif } from "next/font/google"
 import { motion, useReducedMotion } from "framer-motion"
 import SpotifyGlassWidget from "@/components/spotify-glass-widget"
 import LogoLoop, { type LogoItem } from "@/components/LogoLoop"
-import Link from "next/link"
-import {
-  CREATOR_GITHUB,
-  CREATOR_INSTAGRAM,
-  CREATOR_LINKEDIN,
-  CREATOR_PROFILE_PATH,
-} from "@/lib/seo/constants"
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -49,12 +42,6 @@ export default function About() {
               <p className="mt-1 max-w-48 text-sm leading-snug text-muted-foreground">
               Also known as kantcancook and psyx. Visual designer working across music, film, apparel, corporate and editorial.
               </p>
-              <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                <Link href={CREATOR_PROFILE_PATH} className="underline underline-offset-4">Profile</Link>
-                <a href={CREATOR_INSTAGRAM} rel="me external noopener noreferrer" className="underline underline-offset-4">Instagram</a>
-                <a href={CREATOR_LINKEDIN} rel="me external noopener noreferrer" className="underline underline-offset-4">LinkedIn</a>
-                <a href={CREATOR_GITHUB} rel="me external noopener noreferrer" className="underline underline-offset-4">GitHub</a>
-              </div>
             </div>
           </div>
 
